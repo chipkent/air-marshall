@@ -1,0 +1,33 @@
+name: integration-tests-python
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Run integration tests
+        run: |
+          exit_code=0
+          uv run pytest -m integration -v --no-cov --log-cli-level=INFO || exit_code=$?
+          # Exit code 5 means no tests were collected (none exist yet); treat as success
+          [ $exit_code -eq 5 ] && exit 0 || exit $exit_code
