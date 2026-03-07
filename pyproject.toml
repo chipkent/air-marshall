@@ -64,7 +64,7 @@ addopts = "-W error -W ignore::pytest.PytestUnraisableExceptionWarning -m 'not i
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
-    "integration: marks tests requiring live hardware or external services (deselect with '-m not integration')",
+    "integration: marks tests requiring live hardware or external services (deselect with '-m not integration'). Tests requiring RPi hardware must skip gracefully when hardware is unavailable (e.g. pytest.importorskip or a custom skip fixture).",
 ]
 
 [tool.coverage.run]
