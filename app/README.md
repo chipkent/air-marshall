@@ -1,17 +1,23 @@
-# air_marshall
+# air-marshall app
 
-A new Flutter project.
+Flutter mobile app for monitoring and controlling a home HVAC setup via two Raspberry Pi devices.
+
+## Overview
+
+This app is the primary UI for the air-marshall system. It connects to the controller and monitor Raspberry Pis over a local network to display real-time temperature and humidity sensor data and send HVAC control commands.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+Run the app:
 
-A few resources to get you started if this is your first Flutter project:
+```sh
+flutter run
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Run tests:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```sh
+flutter test
+```
+
+For Flutter development documentation, see the [Flutter docs](https://docs.flutter.dev/).
