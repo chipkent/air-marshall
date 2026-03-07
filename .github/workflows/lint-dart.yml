@@ -27,5 +27,6 @@ jobs:
       - name: dart format check
         run: dart format --output=none --set-exit-if-changed app/lib app/test
 
-      - name: dart analyze
-        run: dart analyze app/
+      - name: flutter analyze
+        working-directory: app
+        run: flutter analyze
