@@ -34,7 +34,7 @@ jobs:
           name: coverage-${{ matrix.python-version }}
           path: coverage.xml
 
-      - name: Enforce per-file 90% coverage
+      - name: Enforce per-file 100% coverage
         run: |
           uv run python - <<'EOF'
           import xml.etree.ElementTree as ET, sys
@@ -43,10 +43,10 @@ jobs:
           for cls in tree.iter("class"):
               filename = cls.get("filename", "")
               line_rate = float(cls.get("line-rate", "1"))
-              if line_rate < 0.90:
+              if line_rate < 1.0:
                   failures.append(f"{filename}: {line_rate * 100:.1f}%")
           if failures:
-              print("Files below 90% coverage:")
+              print("Files below 100% coverage:")
               for f in failures:
                   print(f"  {f}")
               sys.exit(1)
