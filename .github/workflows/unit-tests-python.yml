@@ -36,7 +36,7 @@ jobs:
 
       - name: Enforce per-file 90% coverage
         run: |
-          python - <<'EOF'
+          uv run python - <<'EOF'
           import xml.etree.ElementTree as ET, sys
           tree = ET.parse("coverage.xml")
           failures = []
