@@ -1,0 +1,83 @@
+[project]
+name = "air-marshall"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+hvac = []      # RPi deps for HVAC controller (e.g. RPi.GPIO, pimoroni HAT libs)
+monitor = []   # RPi deps for monitor (e.g. sensor libraries)
+test = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "pytest-asyncio>=0.23",
+    "pytest-timeout>=2.1",
+]
+lint = [
+    "ruff>=0.1",
+    "mypy>=1.6",
+]
+dev = ["air-marshall[hvac,monitor,test,lint]"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.uv]
+package = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "D", "S", "C4"]
+ignore = ["E501", "D100", "D104", "D107"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "D103"]  # assert is expected in test code; docstrings not required on test functions
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+strict_optional = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_no_return = true
+warn_return_any = true
+warn_unreachable = true
+disallow_untyped_decorators = true
+disallow_untyped_calls = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-W error -W ignore::pytest.PytestUnraisableExceptionWarning -m 'not integration' --cov=air_marshall --cov-report=term-missing --cov-report=xml"
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "integration: marks tests requiring live hardware or external services (deselect with '-m not integration')",
+]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]

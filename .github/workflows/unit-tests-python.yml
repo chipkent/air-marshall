@@ -1,0 +1,53 @@
+name: unit-tests-python
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv pip install -e ".[test]" --system
+
+      - name: Run tests
+        run: uv run pytest
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: coverage.xml
+
+      - name: Enforce per-file 90% coverage
+        run: |
+          python - <<'EOF'
+          import xml.etree.ElementTree as ET, sys
+          tree = ET.parse("coverage.xml")
+          failures = []
+          for cls in tree.iter("class"):
+              filename = cls.get("filename", "")
+              line_rate = float(cls.get("line-rate", "1"))
+              if line_rate < 0.90:
+                  failures.append(f"{filename}: {line_rate * 100:.1f}%")
+          if failures:
+              print("Files below 90% coverage:")
+              for f in failures:
+                  print(f"  {f}")
+              sys.exit(1)
+          EOF
