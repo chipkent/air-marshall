@@ -45,15 +45,17 @@ pre-commit install --hook-type commit-msg --hook-type pre-commit
 ## Running tests
 
 ```sh
-./bin/test.sh     # all unit tests (Python + Flutter)
+./bin/test.sh              # all unit tests (Python + Flutter)
+./bin/test-integration.sh  # all integration tests — starts a live DB server
 ```
 
 To run a subset:
 
 ```sh
 uv run pytest                                                      # Python unit tests only
-uv run pytest -m integration -v --no-cov --log-cli-level=INFO     # Python integration tests
-cd app && flutter test                                             # Flutter unit tests only
+uv run pytest -m integration -v --no-cov --log-cli-level=INFO     # Python integration tests only
+cd app && flutter test --exclude-tags integration                  # Flutter unit tests only
+cd app && flutter test --tags integration                          # Flutter integration tests only
 ```
 
 ## Deployment

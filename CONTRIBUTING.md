@@ -28,7 +28,8 @@ This runs ruff format + fix, mypy, markdownlint, dart format, and flutter analyz
 ## Run tests
 
 ```sh
-./bin/test.sh     # all unit tests (Python + Flutter)
+./bin/test.sh              # all unit tests (Python + Flutter)
+./bin/test-integration.sh  # all integration tests — starts a live DB server
 ```
 
 To run a subset:
@@ -37,11 +38,14 @@ To run a subset:
 # Python unit tests only
 uv run pytest
 
-# Python integration tests (requires live hardware or external services)
+# Python integration tests only
 uv run pytest -m integration -v --no-cov --log-cli-level=INFO
 
 # Flutter unit tests only
-cd app && flutter test
+cd app && flutter test --exclude-tags integration
+
+# Flutter integration tests only (requires a running DB server)
+cd app && flutter test --tags integration
 ```
 
 ## Commit conventions

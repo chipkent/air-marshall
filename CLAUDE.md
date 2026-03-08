@@ -47,9 +47,17 @@ cd app && flutter analyze             # lint Dart/Flutter
 ## Running tests
 
 ```sh
-uv run pytest                                                      # unit tests (integration excluded)
-uv run pytest -m integration -v --no-cov --log-cli-level=INFO     # integration tests
-cd app && flutter test                                             # Dart/Flutter unit tests
+./bin/test.sh              # all unit tests (Python + Flutter)
+./bin/test-integration.sh  # all integration tests — starts a live DB server
+```
+
+Individual commands:
+
+```sh
+uv run pytest                                                      # Python unit tests only
+uv run pytest -m integration -v --no-cov --log-cli-level=INFO     # Python integration tests only
+cd app && flutter test --exclude-tags integration                  # Flutter unit tests only
+cd app && flutter test --tags integration                          # Flutter integration tests only
 ```
 
 ## Commit conventions

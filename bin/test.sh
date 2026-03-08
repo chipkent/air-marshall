@@ -12,7 +12,7 @@ uv run pytest || python_exit=$?
 
 echo "==> Flutter tests"
 cd app
-flutter test --coverage || flutter_exit=$?
+flutter test --coverage --exclude-tags integration || flutter_exit=$?
 lcov --summary coverage/lcov.info
 
 if [ $python_exit -ne 0 ] || [ $flutter_exit -ne 0 ]; then
