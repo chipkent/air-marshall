@@ -25,16 +25,10 @@ Run these in order and report all failures:
    ./bin/check.sh
    ```
 
-2. **Python unit tests**:
+2. **All tests with coverage** (Python + Flutter):
 
    ```sh
-   uv run pytest
-   ```
-
-3. **Flutter unit tests**:
-
-   ```sh
-   cd app && flutter test
+   ./bin/test.sh
    ```
 
 ## Structural checks (report violations)

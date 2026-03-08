@@ -9,7 +9,7 @@
 
 ## Setup
 
-```bash
+```sh
 # Install Python dependencies (including dev/lint/test extras)
 uv sync --extra dev
 
@@ -19,7 +19,7 @@ pre-commit install --hook-type commit-msg --hook-type pre-commit
 
 ## Run all checks
 
-```bash
+```sh
 ./bin/check.sh
 ```
 
@@ -27,7 +27,7 @@ This runs ruff format + fix, mypy, markdownlint, dart format, and flutter analyz
 
 ## Run tests
 
-```bash
+```sh
 # Unit tests only (default — integration tests excluded)
 uv run pytest
 
@@ -37,7 +37,7 @@ uv run pytest -m integration -v --no-cov --log-cli-level=INFO
 
 ## Flutter
 
-```bash
+```sh
 cd app
 flutter test
 ```

@@ -4,7 +4,7 @@ Flutter mobile app for monitoring and controlling a home HVAC setup via two Rasp
 
 ## Overview
 
-This app is the primary UI for the air-marshall system. It connects to the controller and monitor Raspberry Pis over a local network to display real-time temperature and humidity sensor data and send HVAC control commands.
+This app is the primary UI for the air-marshall system. It connects to the database service over a local network to display real-time temperature and humidity sensor data and send HVAC control commands.
 
 ## Getting Started
 

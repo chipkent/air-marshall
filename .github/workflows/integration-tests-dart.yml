@@ -1,0 +1,66 @@
+name: integration-tests-dart
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "app/**"
+      - "src/air_marshall/database/**"
+      - "src/air_marshall/api/**"
+  workflow_dispatch:
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install Python dependencies
+        run: uv sync --extra database
+
+      - name: Start DB server
+        run: |
+          AIR_MARSHALL_DB_API_KEY=test-key \
+          AIR_MARSHALL_DB_DB_PATH=/tmp/integration_test.db \
+          AIR_MARSHALL_DB_PORT=18888 \
+          uv run air-marshall-db &
+          echo $! > /tmp/db-server.pid
+
+      - name: Wait for server ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:18888/data/latest \
+                -H "X-API-Key: test-key" > /dev/null 2>&1; then
+              echo "Server ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Server did not start in time"
+          exit 1
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.4"
+          channel: stable
+
+      - name: Get Flutter dependencies
+        working-directory: app
+        run: flutter pub get
+
+      - name: Run Dart integration tests
+        working-directory: app
+        env:
+          INTEGRATION_TEST_BASE_URL: http://127.0.0.1:18888
+          INTEGRATION_TEST_API_KEY: test-key
+        run: flutter test --tags integration
+
+      - name: Stop DB server
+        if: always()
+        run: kill $(cat /tmp/db-server.pid) || true
