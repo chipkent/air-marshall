@@ -30,7 +30,7 @@ jobs:
 
       - name: Run tests
         working-directory: app
-        run: flutter test --coverage
+        run: flutter test --coverage --exclude-tags integration
 
       - name: Coverage summary
         working-directory: app

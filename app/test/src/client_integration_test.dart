@@ -26,7 +26,7 @@ void main() {
       'http://127.0.0.1:18888';
   final apiKey = Platform.environment['INTEGRATION_TEST_API_KEY'] ?? 'test-key';
 
-  final ts = DateTime.utc(2024, 6, 1, 12, 0, 0);
+  final ts = DateTime.now().toUtc();
 
   var serverReachable = false;
 
