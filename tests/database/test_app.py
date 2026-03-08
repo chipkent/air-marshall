@@ -77,6 +77,23 @@ class TestPruningLoop:
         assert len(prune_calls) == 2
         assert prune_calls[0] == test_settings.retention_days
 
+    @pytest.mark.asyncio
+    async def test_cancellation_during_prune_propagates(
+        self, db_conn: aiosqlite.Connection, test_settings: Settings
+    ) -> None:
+        """CancelledError raised inside prune_old_records propagates out."""
+
+        async def fake_sleep(_: float) -> None:
+            pass
+
+        async def fake_prune(_conn: aiosqlite.Connection, _days: int) -> None:
+            raise asyncio.CancelledError
+
+        with patch("air_marshall.database.app.asyncio.sleep", fake_sleep):
+            with patch("air_marshall.database.app.prune_old_records", fake_prune):
+                with pytest.raises(asyncio.CancelledError):
+                    await _pruning_loop(db_conn, test_settings)
+
 
 class TestRouteRegistration:
     """Tests verifying expected routes are registered."""
