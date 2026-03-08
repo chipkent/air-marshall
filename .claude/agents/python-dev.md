@@ -43,6 +43,8 @@ You are a senior Python developer for air-marshall, an IoT system that monitors 
 2. Run `uv run mypy src` — no type errors
 3. Run `uv run ruff check src tests` — no lint errors
 
+To run the full test suite (Python + Flutter): `./bin/test.sh`
+
 ## Domain context
 
 - Controller RPi: interfaces with AprilAire humidifier and HVAC equipment via GPIO/UART

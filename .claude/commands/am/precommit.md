@@ -12,16 +12,10 @@ Run code quality checks (format, lint, type-check, markdownlint, dart format, fl
 ./bin/check.sh
 ```
 
-Then run Python unit tests:
+Then run all unit tests:
 
 ```sh
-uv run pytest
-```
-
-Then run Flutter unit tests:
-
-```sh
-cd app && flutter test
+./bin/test.sh
 ```
 
 Report any failures. The check script auto-fixes formatting and lint issues where possible. If anything still fails after the script, summarize what failed and why — do not attempt to write fixes autonomously.

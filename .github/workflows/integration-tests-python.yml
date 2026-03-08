@@ -26,8 +26,4 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run integration tests
-        run: |
-          exit_code=0
-          uv run pytest -m integration -v --no-cov --log-cli-level=INFO || exit_code=$?
-          # Exit code 5 means no tests were collected (none exist yet); treat as success
-          [ $exit_code -eq 5 ] && exit 0 || exit $exit_code
+        run: uv run pytest -m integration -v --no-cov --log-cli-level=INFO

@@ -9,7 +9,7 @@
 
 ## Setup
 
-```bash
+```sh
 # Install Python dependencies (including dev/lint/test extras)
 uv sync --extra dev
 
@@ -19,7 +19,7 @@ pre-commit install --hook-type commit-msg --hook-type pre-commit
 
 ## Run all checks
 
-```bash
+```sh
 ./bin/check.sh
 ```
 
@@ -27,19 +27,25 @@ This runs ruff format + fix, mypy, markdownlint, dart format, and flutter analyz
 
 ## Run tests
 
-```bash
-# Unit tests only (default — integration tests excluded)
-uv run pytest
-
-# Integration tests (requires live hardware or external services)
-uv run pytest -m integration -v --no-cov --log-cli-level=INFO
+```sh
+./bin/test.sh              # all unit tests (Python + Flutter)
+./bin/test-integration.sh  # all integration tests — starts a live DB server
 ```
 
-## Flutter
+To run a subset:
 
-```bash
-cd app
-flutter test
+```sh
+# Python unit tests only
+uv run pytest
+
+# Python integration tests only
+uv run pytest -m integration -v --no-cov --log-cli-level=INFO
+
+# Flutter unit tests only
+cd app && flutter test --exclude-tags integration
+
+# Flutter integration tests only (requires a running DB server)
+cd app && flutter test --tags integration
 ```
 
 ## Commit conventions

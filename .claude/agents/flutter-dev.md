@@ -30,18 +30,20 @@ You are a senior Flutter/Dart developer for air-marshall, an IoT system that mon
 ## Testing
 
 - Write `flutter_test` unit tests for all new code
-- Run tests via `cd app && flutter test`
+- Run Flutter unit tests: `cd app && flutter test --coverage --exclude-tags integration && lcov --summary coverage/lcov.info`
+- Run the full unit test suite (Python + Flutter): `./bin/test.sh`
+- Run all integration tests: `./bin/test-integration.sh`
 - Target 100% unit test coverage for `app/lib/`
 
 ## Before finishing any task
 
 1. Run `cd app && flutter analyze` — no lint errors
 2. Run `dart format app/lib app/test` — consistent formatting
-3. Run `cd app && flutter test` — all tests must pass
+3. Run `cd app && flutter test --coverage --exclude-tags integration && lcov --summary coverage/lcov.info` — all unit tests must pass
 
 ## Domain context
 
 - The app is the primary UI for the air-marshall system
-- It connects to two RPis (controller and monitor) over a local network
+- It connects to the database service over a local network
 - Real-time sensor data (temperature, humidity) must be displayed with low latency
 - The app must handle connectivity loss to the RPis gracefully

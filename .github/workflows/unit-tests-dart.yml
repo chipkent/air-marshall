@@ -25,6 +25,13 @@ jobs:
         working-directory: app
         run: flutter pub get
 
+      - name: Install lcov
+        run: sudo apt-get install -y lcov
+
       - name: Run tests
         working-directory: app
-        run: flutter test
+        run: flutter test --coverage --exclude-tags integration
+
+      - name: Coverage summary
+        working-directory: app
+        run: lcov --summary coverage/lcov.info

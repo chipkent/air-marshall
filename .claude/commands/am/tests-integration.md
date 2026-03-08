@@ -1,15 +1,15 @@
 ---
-description: Run Python integration tests with verbose output and live logs
+description: Run all integration tests (Python + Flutter) against a live DB server
 disable-model-invocation: true
 allowed-tools: Bash
 ---
 
 # Integration Tests
 
-Run Python integration tests:
+Run all integration tests (starts a live DB server, runs Python + Flutter):
 
 ```sh
-uv run pytest -m integration -v --no-cov --log-cli-level=INFO
+./bin/test-integration.sh
 ```
 
 Report the results. If tests fail, summarize what failed and why.

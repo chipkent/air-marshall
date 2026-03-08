@@ -6,16 +6,10 @@ allowed-tools: Bash
 
 # Run Tests
 
-Run Python unit tests:
+Run all tests (Python + Flutter) with coverage:
 
 ```sh
-uv run pytest
-```
-
-Run Flutter/Dart unit tests:
-
-```sh
-cd app && flutter test
+./bin/test.sh
 ```
 
 Report the results. If tests fail, summarize what failed and why.

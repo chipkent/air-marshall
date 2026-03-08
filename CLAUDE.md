@@ -8,7 +8,8 @@ Flutter mobile app for the UI.
 
 - `src/air_marshall/hvac_controller/` — HVAC control logic (runs on controller RPi)
 - `src/air_marshall/monitor/` — Environmental monitoring (runs on monitor RPi)
-- `src/air_marshall/shared/` — Shared utilities
+- `src/air_marshall/api/` — HTTP API models and client (used by both RPi services)
+- `src/air_marshall/database/` — FastAPI/SQLite HTTP service
 - `app/` — Flutter mobile app
 - `tests/` — Python unit and integration tests
 
@@ -46,9 +47,17 @@ cd app && flutter analyze             # lint Dart/Flutter
 ## Running tests
 
 ```sh
-uv run pytest                                                      # unit tests (integration excluded)
-uv run pytest -m integration -v --no-cov --log-cli-level=INFO     # integration tests
-cd app && flutter test                                             # Dart/Flutter unit tests
+./bin/test.sh              # all unit tests (Python + Flutter)
+./bin/test-integration.sh  # all integration tests — starts a live DB server
+```
+
+Individual commands:
+
+```sh
+uv run pytest                                                      # Python unit tests only
+uv run pytest -m integration -v --no-cov --log-cli-level=INFO     # Python integration tests only
+cd app && flutter test --exclude-tags integration                  # Flutter unit tests only
+cd app && flutter test --tags integration                          # Flutter integration tests only
 ```
 
 ## Commit conventions
@@ -64,7 +73,10 @@ The commitizen pre-commit hook enforces this on `commit-msg`.
 - Do not access private members (underscore-prefixed) across package boundaries. Test files may access the code they test.
 - When moving or removing files, use `git mv` / `git rm` to preserve history.
 - Use American English spelling throughout code, comments, docstrings, and docs.
-- Write Python docstrings in Google style.
+- Write Python docstrings in Google style. Module-level constants and Pydantic model fields use an inline docstring (triple-quoted string immediately after the assignment), not a `#` comment.
+- Keep docstrings in sync with the code. When you rename, restructure, or move code, update all affected docstrings in the same change. Stale docstrings are bugs.
+- Docstrings must add information beyond what the name and type signature already convey. Do not restate the obvious.
+- Do not put operational information (how to run, env vars, deployment) in docstrings. That belongs in external docs. Do not cross-reference external files from docstrings — file paths change and the reference will drift.
 - One source file maps to one test file (`<file>.py` → `test_<file>.py`). Integration tests use `test_<file>_integration.py`.
 - Follow the [Dart style guide](https://dart.dev/effective-dart) for Dart/Flutter code in `app/`.
 - Run `flutter analyze` to check for lint errors in `app/`.

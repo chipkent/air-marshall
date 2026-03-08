@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+/lib/
 lib64/
 parts/
 sdist/
@@ -208,6 +208,7 @@ __marimo__/
 
 # Claude Code
 .claude/settings.local.json
+.claude/agent-memory/
 
 # Dart / Flutter
 .dart_tool/
