@@ -28,18 +28,20 @@ This runs ruff format + fix, mypy, markdownlint, dart format, and flutter analyz
 ## Run tests
 
 ```sh
-# Unit tests only (default — integration tests excluded)
-uv run pytest
-
-# Integration tests (requires live hardware or external services)
-uv run pytest -m integration -v --no-cov --log-cli-level=INFO
+./bin/test.sh     # all unit tests (Python + Flutter)
 ```
 
-## Flutter
+To run a subset:
 
 ```sh
-cd app
-flutter test
+# Python unit tests only
+uv run pytest
+
+# Python integration tests (requires live hardware or external services)
+uv run pytest -m integration -v --no-cov --log-cli-level=INFO
+
+# Flutter unit tests only
+cd app && flutter test
 ```
 
 ## Commit conventions

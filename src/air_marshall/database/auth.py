@@ -7,12 +7,17 @@ from fastapi.security import APIKeyHeader
 
 from air_marshall.database.config import Settings, get_settings
 
-API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=True)
-"""FastAPI security scheme that extracts the ``X-API-Key`` request header."""
+API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=False)
+"""FastAPI security scheme that extracts the ``X-API-Key`` request header.
+
+``auto_error=False`` lets the header be absent (yielding ``None``) so that
+``require_api_key`` can return a consistent 401 for both missing and wrong keys
+rather than the 403 FastAPI would raise automatically.
+"""
 
 
 async def require_api_key(
-    api_key: str = Security(API_KEY_HEADER),
+    api_key: str | None = Security(API_KEY_HEADER),
     settings: Settings = Depends(get_settings),
 ) -> None:
     """Validate the X-API-Key header against the configured API key.
@@ -20,7 +25,7 @@ async def require_api_key(
     Uses constant-time comparison to prevent timing attacks.
 
     Raises:
-        HTTPException: 401 if the key does not match.
+        HTTPException: 401 if the header is absent or the key does not match.
     """
-    if not secrets.compare_digest(api_key, settings.api_key):
+    if api_key is None or not secrets.compare_digest(api_key, settings.api_key):
         raise HTTPException(status_code=401, detail="Invalid API key")

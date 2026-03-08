@@ -9,7 +9,7 @@ Storage conventions:
 - Booleans are stored as INTEGER (0/1).
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import aiosqlite
 from fastapi import Request
@@ -262,8 +262,8 @@ async def get_history_control(
 
 async def prune_old_records(conn: aiosqlite.Connection, retention_days: int) -> None:
     """Delete records older than ``retention_days`` days from all tables."""
-    cutoff = f"datetime('now', '-{retention_days} days')"
-    await conn.execute(f"DELETE FROM humidity WHERE timestamp < {cutoff}")  # noqa: S608
-    await conn.execute(f"DELETE FROM fan WHERE timestamp < {cutoff}")  # noqa: S608
-    await conn.execute(f"DELETE FROM control WHERE timestamp < {cutoff}")  # noqa: S608
+    cutoff = (datetime.now(tz=UTC) - timedelta(days=retention_days)).isoformat()
+    await conn.execute("DELETE FROM humidity WHERE timestamp < ?", (cutoff,))
+    await conn.execute("DELETE FROM fan WHERE timestamp < ?", (cutoff,))
+    await conn.execute("DELETE FROM control WHERE timestamp < ?", (cutoff,))
     await conn.commit()

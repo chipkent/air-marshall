@@ -23,13 +23,6 @@ from air_marshall.database.config import get_settings
 _TS = datetime.now(tz=UTC)
 
 
-def _free_port() -> int:
-    """Return an available TCP port on localhost."""
-    with socket.socket() as s:
-        s.bind(("", 0))
-        return s.getsockname()[1]
-
-
 class _QuietServer(uvicorn.Server):
     """Uvicorn server subclass that suppresses signal handler installation."""
 
@@ -46,15 +39,21 @@ async def test_full_roundtrip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     latest; history; auth failures; and the Python AirMarshallClient.
     """
     db_file = str(tmp_path / "test.db")
-    port = _free_port()
     monkeypatch.setenv("AIR_MARSHALL_DB_API_KEY", "ikey")
     monkeypatch.setenv("AIR_MARSHALL_DB_DB_PATH", db_file)
     get_settings.cache_clear()
 
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+
     try:
-        config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error")
+        config = uvicorn.Config(app, log_level="error")
         server = _QuietServer(config=config)
-        thread = threading.Thread(target=server.run, daemon=True)
+        thread = threading.Thread(
+            target=server.run, kwargs={"sockets": [sock]}, daemon=True
+        )
         thread.start()
 
         # Wait for the server to become ready
@@ -68,6 +67,8 @@ async def test_full_roundtrip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
                 break
             except httpx.ConnectError:
                 await asyncio.sleep(0.1)
+        else:
+            pytest.fail("Server did not become reachable within 2 seconds")
 
         async with httpx.AsyncClient(base_url=base_url) as client:
             # --- initial state: empty humidity list ---

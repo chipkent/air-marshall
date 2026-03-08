@@ -1,6 +1,8 @@
 """Tests for air_marshall.api.client."""
 
 import json
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from typing import Any
 
@@ -66,11 +68,17 @@ class _MockTransport(httpx.AsyncBaseTransport):
         )
 
 
-def _make_client(transport: _MockTransport) -> AirMarshallClient:
+@asynccontextmanager
+async def _make_client(
+    transport: _MockTransport,
+) -> AsyncGenerator[AirMarshallClient, None]:
     client = AirMarshallClient.__new__(AirMarshallClient)
     client._client = httpx.AsyncClient(base_url="http://test", transport=transport)
     client._api_key = "test-key"
-    return client
+    try:
+        yield client
+    finally:
+        await client.close()
 
 
 class TestInit:
@@ -93,8 +101,8 @@ class TestPostHumidity:
     async def test_sends_post_to_correct_path(self) -> None:
         """post_humidity sends a POST to /data/humidity."""
         transport = _MockTransport(status_code=201)
-        client = _make_client(transport)
-        await client.post_humidity(_humidity())
+        async with _make_client(transport) as client:
+            await client.post_humidity(_humidity())
         assert transport.last_request is not None
         assert transport.last_request.method == "POST"
         assert transport.last_request.url.path == "/data/humidity"
@@ -103,8 +111,8 @@ class TestPostHumidity:
     async def test_sends_api_key_header(self) -> None:
         """post_humidity includes the X-API-Key header."""
         transport = _MockTransport(status_code=201)
-        client = _make_client(transport)
-        await client.post_humidity(_humidity())
+        async with _make_client(transport) as client:
+            await client.post_humidity(_humidity())
         assert transport.last_request is not None
         assert transport.last_request.headers["x-api-key"] == "test-key"
 
@@ -112,9 +120,9 @@ class TestPostHumidity:
     async def test_raises_on_error_status(self) -> None:
         """post_humidity raises HTTPStatusError on 4xx/5xx responses."""
         transport = _MockTransport(status_code=401)
-        client = _make_client(transport)
-        with pytest.raises(httpx.HTTPStatusError):
-            await client.post_humidity(_humidity())
+        async with _make_client(transport) as client:
+            with pytest.raises(httpx.HTTPStatusError):
+                await client.post_humidity(_humidity())
 
 
 class TestPostFan:
@@ -124,8 +132,8 @@ class TestPostFan:
     async def test_sends_post_to_correct_path(self) -> None:
         """post_fan sends a POST to /data/fan."""
         transport = _MockTransport(status_code=201)
-        client = _make_client(transport)
-        await client.post_fan(_fan())
+        async with _make_client(transport) as client:
+            await client.post_fan(_fan())
         assert transport.last_request is not None
         assert transport.last_request.url.path == "/data/fan"
 
@@ -137,8 +145,8 @@ class TestPostControl:
     async def test_sends_post_to_correct_path(self) -> None:
         """post_control sends a POST to /data/control."""
         transport = _MockTransport(status_code=201)
-        client = _make_client(transport)
-        await client.post_control(_control())
+        async with _make_client(transport) as client:
+            await client.post_control(_control())
         assert transport.last_request is not None
         assert transport.last_request.url.path == "/data/control"
 
@@ -151,8 +159,8 @@ class TestGetLatest:
         """get_latest returns a LatestResponse parsed from JSON."""
         body = {"humidity": [], "fan": None, "control": None}
         transport = _MockTransport(status_code=200, body=body)
-        client = _make_client(transport)
-        result = await client.get_latest()
+        async with _make_client(transport) as client:
+            result = await client.get_latest()
         assert isinstance(result, LatestResponse)
         assert result.humidity == []
 
@@ -161,8 +169,8 @@ class TestGetLatest:
         """get_latest forwards sensor_id as a query parameter."""
         body = {"humidity": [], "fan": None, "control": None}
         transport = _MockTransport(status_code=200, body=body)
-        client = _make_client(transport)
-        await client.get_latest(sensor_id="s1")
+        async with _make_client(transport) as client:
+            await client.get_latest(sensor_id="s1")
         assert transport.last_request is not None
         assert "sensor_id=s1" in str(transport.last_request.url)
 
@@ -171,8 +179,8 @@ class TestGetLatest:
         """get_latest without sensor_id does not add a query parameter."""
         body = {"humidity": [], "fan": None, "control": None}
         transport = _MockTransport(status_code=200, body=body)
-        client = _make_client(transport)
-        await client.get_latest()
+        async with _make_client(transport) as client:
+            await client.get_latest()
         assert transport.last_request is not None
         assert "sensor_id" not in str(transport.last_request.url)
 
@@ -180,9 +188,9 @@ class TestGetLatest:
     async def test_raises_on_error_status(self) -> None:
         """get_latest raises HTTPStatusError on non-2xx response."""
         transport = _MockTransport(status_code=500)
-        client = _make_client(transport)
-        with pytest.raises(httpx.HTTPStatusError):
-            await client.get_latest()
+        async with _make_client(transport) as client:
+            with pytest.raises(httpx.HTTPStatusError):
+                await client.get_latest()
 
 
 class TestGetHistory:
@@ -193,8 +201,8 @@ class TestGetHistory:
         """get_history returns a HistoryResponse parsed from JSON."""
         body = {"humidity": [], "fan": [], "control": []}
         transport = _MockTransport(status_code=200, body=body)
-        client = _make_client(transport)
-        result = await client.get_history()
+        async with _make_client(transport) as client:
+            result = await client.get_history()
         assert isinstance(result, HistoryResponse)
         assert result.humidity == []
 
@@ -203,8 +211,8 @@ class TestGetHistory:
         """get_history sends a GET to /data/history."""
         body = {"humidity": [], "fan": [], "control": []}
         transport = _MockTransport(status_code=200, body=body)
-        client = _make_client(transport)
-        await client.get_history()
+        async with _make_client(transport) as client:
+            await client.get_history()
         assert transport.last_request is not None
         assert transport.last_request.method == "GET"
         assert transport.last_request.url.path == "/data/history"

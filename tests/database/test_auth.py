@@ -46,7 +46,7 @@ class TestRequireApiKey:
     async def test_missing_key_returns_401(
         self, test_client: httpx.AsyncClient
     ) -> None:
-        """A missing API key header results in a 401 response (auto_error=True)."""
+        """A missing API key header results in a 401 response."""
         response = await test_client.post(
             "/data/humidity",
             json=_HUMIDITY_PAYLOAD,

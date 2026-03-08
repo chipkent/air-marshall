@@ -1,6 +1,6 @@
 """Tests for air_marshall.database.routes."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
@@ -279,10 +279,10 @@ class TestGetHistory:
         self, test_client: httpx.AsyncClient
     ) -> None:
         """Records older than the retention window do not appear in /data/history."""
-        # _TS is 2024-06-01, more than 30 days before today
+        old_ts = datetime.now(tz=UTC) - timedelta(days=31)
         await test_client.post(
             "/data/fan",
-            json={**_FAN, "is_on": False},
+            json={**_FAN, "timestamp": old_ts.isoformat(), "is_on": False},
             headers={"X-API-Key": "test-key"},
         )
         response = await test_client.get(
