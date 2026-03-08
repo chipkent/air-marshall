@@ -49,5 +49,7 @@ async def _pruning_loop(conn: aiosqlite.Connection, settings: Settings) -> None:
         await asyncio.sleep(settings.pruning_interval_hours * 3600)
         try:
             await prune_old_records(conn, settings.retention_days)
+        except asyncio.CancelledError:
+            raise
         except Exception:
             _log.exception("Pruning failed; will retry after next interval")

@@ -115,6 +115,9 @@ class TestGetLatest:
     @pytest.mark.asyncio
     async def test_latest_requires_auth(self, test_client: httpx.AsyncClient) -> None:
         """GET /data/latest requires a valid API key."""
+        response = await test_client.get("/data/latest")
+        assert response.status_code == 401
+
         response = await test_client.get(
             "/data/latest", headers={"X-API-Key": "test-key"}
         )

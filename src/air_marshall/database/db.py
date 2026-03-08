@@ -5,7 +5,9 @@ state so tests can inject an in-memory connection via
 ``app.dependency_overrides``.
 
 Storage conventions:
-- Datetimes are stored as ISO 8601 strings (``datetime.isoformat()``).
+- Datetimes are stored as UTC ISO 8601 strings (``datetime.astimezone(UTC).isoformat()``).
+  All timestamps are normalised to UTC before storage so that lexicographic
+  ORDER BY and string comparisons on the ``timestamp`` column are correct.
 - Booleans are stored as INTEGER (0/1).
 """
 
@@ -74,7 +76,7 @@ async def insert_humidity(conn: aiosqlite.Connection, record: HumidityRecord) ->
         (
             record.sensor_id,
             record.sensor_serial_number,
-            record.timestamp.isoformat(),
+            record.timestamp.astimezone(UTC).isoformat(),
             record.temperature,
             record.humidity,
             1 if record.is_touched else 0,
@@ -87,7 +89,7 @@ async def insert_fan(conn: aiosqlite.Connection, record: FanRecord) -> None:
     """Insert a fan state record."""
     await conn.execute(
         "INSERT INTO fan (timestamp, is_on) VALUES (?, ?)",
-        (record.timestamp.isoformat(), 1 if record.is_on else 0),
+        (record.timestamp.astimezone(UTC).isoformat(), 1 if record.is_on else 0),
     )
     await conn.commit()
 
@@ -97,7 +99,7 @@ async def insert_control(conn: aiosqlite.Connection, record: ControlRecord) -> N
     await conn.execute(
         "INSERT INTO control (timestamp, humidifier_on, fan_on) VALUES (?, ?, ?)",
         (
-            record.timestamp.isoformat(),
+            record.timestamp.astimezone(UTC).isoformat(),
             1 if record.humidifier_on else 0,
             1 if record.fan_on else 0,
         ),
