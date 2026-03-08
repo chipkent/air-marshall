@@ -32,7 +32,7 @@ from air_marshall.database.db import (
 )
 
 router = APIRouter(prefix="/data", tags=["data"])
-"""Router mounted at ``/data``; included by the application in ``app.py``."""
+"""Router mounted at ``/data`` by the FastAPI application."""
 
 
 @router.post("/humidity", status_code=201, response_class=Response)

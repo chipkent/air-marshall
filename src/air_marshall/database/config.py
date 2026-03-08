@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="AIR_MARSHALL_DB_")
 
     api_key: str
-    """Shared secret required in the ``X-API-Key`` header of every write request."""
+    """Shared secret required in the ``X-API-Key`` header of every request."""
 
     db_path: str = "air_marshall.db"
     """Path to the SQLite database file. Use ``:memory:`` in tests."""

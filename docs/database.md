@@ -35,6 +35,23 @@ is the only required variable; all others have defaults.
 | `AIR_MARSHALL_DB_PORT` | `8000` | TCP port passed to uvicorn. |
 | `AIR_MARSHALL_DB_LOG_LEVEL` | `info` | Uvicorn log level (`debug`, `info`, `warning`, `error`, `critical`). |
 
+## Security
+
+The service uses a shared `X-API-Key` header for authentication. Over plain HTTP
+this key is transmitted in cleartext and can be intercepted by anyone on the same
+network, allowing them to issue arbitrary authenticated requests.
+
+**Do not expose the service over unencrypted HTTP on untrusted networks.**
+
+For deployments beyond a fully trusted local network, place the service behind a
+TLS-terminating reverse proxy (nginx, Caddy, Traefik, etc.) so that all traffic —
+including the API key and sensor data — is encrypted in transit. Bind uvicorn to
+`127.0.0.1` and let the proxy handle the public interface:
+
+```sh
+AIR_MARSHALL_DB_HOST=127.0.0.1 uv run air-marshall-db
+```
+
 ## systemd setup
 
 Create an environment file readable only by root:

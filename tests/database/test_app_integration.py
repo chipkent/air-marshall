@@ -43,6 +43,10 @@ async def test_full_roundtrip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("AIR_MARSHALL_DB_DB_PATH", db_file)
     get_settings.cache_clear()
 
+    sock: socket.socket | None = None
+    server: _QuietServer | None = None
+    thread: threading.Thread | None = None
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("127.0.0.1", 0))
@@ -187,6 +191,10 @@ async def test_full_roundtrip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
             assert latest.humidity[0].sensor_id == "s_py"
 
     finally:
-        server.should_exit = True
-        thread.join(timeout=5)
+        if server is not None:
+            server.should_exit = True
+        if thread is not None:
+            thread.join(timeout=5)
+        if sock is not None:
+            sock.close()
         get_settings.cache_clear()
