@@ -20,7 +20,7 @@ from air_marshall.api.models import HumidityRecord
 from air_marshall.database.app import app
 from air_marshall.database.config import get_settings
 
-_TS = datetime(2024, 6, 1, 12, 0, 0, tzinfo=UTC)
+_TS = datetime.now(tz=UTC)
 
 
 def _free_port() -> int:
