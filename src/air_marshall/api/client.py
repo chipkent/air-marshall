@@ -15,13 +15,15 @@ from air_marshall.api.models import (
 class AirMarshallClient:
     """Async HTTP client for the air-marshall database service.
 
+    All requests time out after 30 seconds, raising httpx.TimeoutException.
+
     Args:
         base_url: Base URL of the database service (e.g. "http://pi4:8000").
         api_key: Shared secret sent as the ``X-API-Key`` header.
     """
 
     def __init__(self, base_url: str, api_key: str) -> None:
-        self._client = httpx.AsyncClient(base_url=base_url)
+        self._client = httpx.AsyncClient(base_url=base_url, timeout=30.0)
         self._api_key = api_key
 
     @property
@@ -53,6 +55,7 @@ class AirMarshallClient:
 
         Raises:
             httpx.HTTPStatusError: On a non-2xx response.
+            httpx.TimeoutException: If no response is received within 30 seconds.
         """
         response = await self._client.post(
             "/data/humidity",
@@ -66,6 +69,7 @@ class AirMarshallClient:
 
         Raises:
             httpx.HTTPStatusError: On a non-2xx response.
+            httpx.TimeoutException: If no response is received within 30 seconds.
         """
         response = await self._client.post(
             "/data/fan",
@@ -79,6 +83,7 @@ class AirMarshallClient:
 
         Raises:
             httpx.HTTPStatusError: On a non-2xx response.
+            httpx.TimeoutException: If no response is received within 30 seconds.
         """
         response = await self._client.post(
             "/data/control",
@@ -92,6 +97,7 @@ class AirMarshallClient:
 
         Raises:
             httpx.HTTPStatusError: On a non-2xx response.
+            httpx.TimeoutException: If no response is received within 30 seconds.
         """
         response = await self._client.post(
             "/data/config",
@@ -111,6 +117,7 @@ class AirMarshallClient:
 
         Raises:
             httpx.HTTPStatusError: On a non-2xx response.
+            httpx.TimeoutException: If no response is received within 30 seconds.
         """
         params: dict[str, str] = {}
         if sensor_id is not None:
@@ -130,6 +137,7 @@ class AirMarshallClient:
 
         Raises:
             httpx.HTTPStatusError: On a non-2xx response.
+            httpx.TimeoutException: If no response is received within 30 seconds.
         """
         response = await self._client.get("/data/history", headers=self._headers)
         self._check_response(response)

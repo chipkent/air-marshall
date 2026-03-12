@@ -73,9 +73,16 @@ class _MockTransport(httpx.AsyncBaseTransport):
         )
 
 
+class _TimeoutTransport(httpx.AsyncBaseTransport):
+    """Transport that always raises TimeoutException."""
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        raise httpx.TimeoutException("timed out")
+
+
 @asynccontextmanager
 async def _make_client(
-    transport: _MockTransport,
+    transport: httpx.AsyncBaseTransport,
 ) -> AsyncGenerator[AirMarshallClient, None]:
     client = AirMarshallClient.__new__(AirMarshallClient)
     client._client = httpx.AsyncClient(base_url="http://test", transport=transport)
@@ -129,6 +136,13 @@ class TestPostHumidity:
             with pytest.raises(httpx.HTTPStatusError):
                 await client.post_humidity(_humidity())
 
+    @pytest.mark.asyncio
+    async def test_raises_on_timeout(self) -> None:
+        """post_humidity raises TimeoutException when the server does not respond."""
+        async with _make_client(_TimeoutTransport()) as client:
+            with pytest.raises(httpx.TimeoutException):
+                await client.post_humidity(_humidity())
+
 
 class TestPostFan:
     """Tests for AirMarshallClient.post_fan."""
@@ -142,6 +156,13 @@ class TestPostFan:
         assert transport.last_request is not None
         assert transport.last_request.url.path == "/data/fan"
 
+    @pytest.mark.asyncio
+    async def test_raises_on_timeout(self) -> None:
+        """post_fan raises TimeoutException when the server does not respond."""
+        async with _make_client(_TimeoutTransport()) as client:
+            with pytest.raises(httpx.TimeoutException):
+                await client.post_fan(_fan())
+
 
 class TestPostControl:
     """Tests for AirMarshallClient.post_control."""
@@ -154,6 +175,13 @@ class TestPostControl:
             await client.post_control(_control())
         assert transport.last_request is not None
         assert transport.last_request.url.path == "/data/control"
+
+    @pytest.mark.asyncio
+    async def test_raises_on_timeout(self) -> None:
+        """post_control raises TimeoutException when the server does not respond."""
+        async with _make_client(_TimeoutTransport()) as client:
+            with pytest.raises(httpx.TimeoutException):
+                await client.post_control(_control())
 
 
 class TestPostConfig:
@@ -184,6 +212,13 @@ class TestPostConfig:
         transport = _MockTransport(status_code=401)
         async with _make_client(transport) as client:
             with pytest.raises(httpx.HTTPStatusError):
+                await client.post_config(_config())
+
+    @pytest.mark.asyncio
+    async def test_raises_on_timeout(self) -> None:
+        """post_config raises TimeoutException when the server does not respond."""
+        async with _make_client(_TimeoutTransport()) as client:
+            with pytest.raises(httpx.TimeoutException):
                 await client.post_config(_config())
 
 
@@ -228,6 +263,13 @@ class TestGetLatest:
             with pytest.raises(httpx.HTTPStatusError):
                 await client.get_latest()
 
+    @pytest.mark.asyncio
+    async def test_raises_on_timeout(self) -> None:
+        """get_latest raises TimeoutException when the server does not respond."""
+        async with _make_client(_TimeoutTransport()) as client:
+            with pytest.raises(httpx.TimeoutException):
+                await client.get_latest()
+
 
 class TestGetHistory:
     """Tests for AirMarshallClient.get_history."""
@@ -252,6 +294,13 @@ class TestGetHistory:
         assert transport.last_request is not None
         assert transport.last_request.method == "GET"
         assert transport.last_request.url.path == "/data/history"
+
+    @pytest.mark.asyncio
+    async def test_raises_on_timeout(self) -> None:
+        """get_history raises TimeoutException when the server does not respond."""
+        async with _make_client(_TimeoutTransport()) as client:
+            with pytest.raises(httpx.TimeoutException):
+                await client.get_history()
 
 
 class TestContextManager:
