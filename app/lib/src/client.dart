@@ -57,12 +57,15 @@ class ApiClient {
   /// POSTs [body] as JSON to [path] relative to [baseUrl].
   ///
   /// Throws [http.ClientException] on a non-2xx response.
+  /// Throws [TimeoutException] if no response is received within 30 seconds.
   Future<void> _post(String path, Map<String, dynamic> body) async {
-    final response = await _client.post(
-      Uri.parse('$baseUrl$path'),
-      headers: _headers,
-      body: jsonEncode(body),
-    );
+    final response = await _client
+        .post(
+          Uri.parse('$baseUrl$path'),
+          headers: _headers,
+          body: jsonEncode(body),
+        )
+        .timeout(const Duration(seconds: 30));
     _checkResponse(response);
   }
 
@@ -99,7 +102,9 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl/data/latest').replace(
       queryParameters: sensorId != null ? {'sensor_id': sensorId} : null,
     );
-    final response = await _client.get(uri, headers: _headers);
+    final response = await _client
+        .get(uri, headers: _headers)
+        .timeout(const Duration(seconds: 30));
     _checkResponse(response);
     return LatestResponse.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
@@ -110,10 +115,9 @@ class ApiClient {
   ///
   /// Throws [http.ClientException] on a non-2xx response.
   Future<HistoryResponse> getHistory() async {
-    final response = await _client.get(
-      Uri.parse('$baseUrl/data/history'),
-      headers: _headers,
-    );
+    final response = await _client
+        .get(Uri.parse('$baseUrl/data/history'), headers: _headers)
+        .timeout(const Duration(seconds: 30));
     _checkResponse(response);
     return HistoryResponse.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
