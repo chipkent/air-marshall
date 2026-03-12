@@ -114,6 +114,27 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // postConfig → getLatest
+  // ---------------------------------------------------------------------------
+
+  test('postConfig then getLatest has config populated', () async {
+    final client = ApiClient(baseUrl: baseUrl, apiKey: apiKey);
+    addTearDown(client.close);
+
+    final record = ConfigRecord(
+      timestamp: ts,
+      humidityLow: 30.0,
+      humidityHigh: 50.0,
+    );
+    await client.postConfig(record);
+
+    final latest = await client.getLatest();
+    expect(latest.config, isNotNull);
+    expect(latest.config!.humidityLow, 30.0);
+    expect(latest.config!.humidityHigh, 50.0);
+  });
+
+  // ---------------------------------------------------------------------------
   // Multi-sensor: post s_ms_1 + s_ms_2 → getLatest returns 2 records
   // ---------------------------------------------------------------------------
 

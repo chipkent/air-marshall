@@ -38,6 +38,17 @@ void main() {
     fanOn: false,
   );
 
+  final configJson = {
+    'timestamp': '2024-01-01T00:00:00.000Z',
+    'humidity_low': 30.0,
+    'humidity_high': 50.0,
+  };
+  final configRecord = ConfigRecord(
+    timestamp: DateTime.utc(2024, 1, 1),
+    humidityLow: 30.0,
+    humidityHigh: 50.0,
+  );
+
   // ---------------------------------------------------------------------------
   // HumidityRecord
   // ---------------------------------------------------------------------------
@@ -143,33 +154,74 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // ConfigRecord
+  // ---------------------------------------------------------------------------
+
+  group('ConfigRecord', () {
+    test('fromJson/toJson round-trip', () {
+      final record = ConfigRecord.fromJson(configJson);
+      expect(record.humidityLow, 30.0);
+      expect(record.humidityHigh, 50.0);
+      final rt = ConfigRecord.fromJson(record.toJson());
+      expect(rt.humidityLow, record.humidityLow);
+      expect(rt.humidityHigh, record.humidityHigh);
+      expect(rt.timestamp, record.timestamp);
+    });
+
+    test('== and hashCode are value-equal for identical data', () {
+      final a = ConfigRecord.fromJson(configJson);
+      final b = ConfigRecord.fromJson(configJson);
+      expect(a, equals(b));
+      expect(a.hashCode, equals(b.hashCode));
+    });
+
+    test('== returns false for different humidityLow', () {
+      final a = ConfigRecord.fromJson(configJson);
+      final b = ConfigRecord.fromJson({...configJson, 'humidity_low': 25.0});
+      expect(a, isNot(equals(b)));
+    });
+
+    test('toString contains field values', () {
+      expect(configRecord.toString(), contains('30.0'));
+      expect(configRecord.toString(), contains('50.0'));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // LatestResponse
   // ---------------------------------------------------------------------------
 
   group('LatestResponse', () {
-    test('empty humidity list and null fan/control when fields absent', () {
-      final r = LatestResponse.fromJson({});
-      expect(r.humidity, isEmpty);
-      expect(r.fan, isNull);
-      expect(r.control, isNull);
-    });
+    test(
+      'empty humidity list and null fan/control/config when fields absent',
+      () {
+        final r = LatestResponse.fromJson({});
+        expect(r.humidity, isEmpty);
+        expect(r.fan, isNull);
+        expect(r.control, isNull);
+        expect(r.config, isNull);
+      },
+    );
 
     test('empty humidity list when humidity is empty array', () {
       final r = LatestResponse.fromJson({
         'humidity': [],
         'fan': null,
         'control': null,
+        'config': null,
       });
       expect(r.humidity, isEmpty);
       expect(r.fan, isNull);
       expect(r.control, isNull);
+      expect(r.config, isNull);
     });
 
-    test('parses populated humidity list, fan, and control', () {
+    test('parses populated humidity list, fan, control, and config', () {
       final r = LatestResponse.fromJson({
         'humidity': [humidityJson],
         'fan': fanJson,
         'control': controlJson,
+        'config': configJson,
       });
       expect(r.humidity.length, 1);
       expect(r.humidity[0].sensorId, 'sensor1');
@@ -177,6 +229,8 @@ void main() {
       expect(r.fan!.isOn, true);
       expect(r.control, isNotNull);
       expect(r.control!.humidifierOn, true);
+      expect(r.config, isNotNull);
+      expect(r.config!.humidityLow, 30.0);
     });
 
     test('toJson round-trip preserves all fields', () {
@@ -184,6 +238,7 @@ void main() {
         humidity: [humidityRecord],
         fan: fanRecord,
         control: controlRecord,
+        config: configRecord,
       );
       final decoded = LatestResponse.fromJson(original.toJson());
       expect(decoded, equals(original));
@@ -195,11 +250,20 @@ void main() {
       expect(j['humidity'], isEmpty);
       expect(j['fan'], isNull);
       expect(j['control'], isNull);
+      expect(j['config'], isNull);
     });
 
     test('== and hashCode are value-equal for identical data', () {
-      final a = LatestResponse(humidity: [humidityRecord], fan: fanRecord);
-      final b = LatestResponse(humidity: [humidityRecord], fan: fanRecord);
+      final a = LatestResponse(
+        humidity: [humidityRecord],
+        fan: fanRecord,
+        config: configRecord,
+      );
+      final b = LatestResponse(
+        humidity: [humidityRecord],
+        fan: fanRecord,
+        config: configRecord,
+      );
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
     });
@@ -219,6 +283,7 @@ void main() {
       expect(r.humidity, isEmpty);
       expect(r.fan, isEmpty);
       expect(r.control, isEmpty);
+      expect(r.config, isEmpty);
     });
 
     test('parses non-empty lists', () {
@@ -226,6 +291,7 @@ void main() {
         'humidity': [humidityJson],
         'fan': [fanJson],
         'control': [controlJson],
+        'config': [configJson],
       };
       final r = HistoryResponse.fromJson(json);
       expect(r.humidity.length, 1);
@@ -234,6 +300,8 @@ void main() {
       expect(r.fan[0].isOn, true);
       expect(r.control.length, 1);
       expect(r.control[0].humidifierOn, true);
+      expect(r.config.length, 1);
+      expect(r.config[0].humidityLow, 30.0);
     });
 
     test('toJson round-trip preserves all lists', () {
@@ -241,14 +309,23 @@ void main() {
         humidity: [humidityRecord],
         fan: [fanRecord],
         control: [controlRecord],
+        config: [configRecord],
       );
       final decoded = HistoryResponse.fromJson(original.toJson());
       expect(decoded, equals(original));
     });
 
     test('== and hashCode are value-equal for identical data', () {
-      final a = HistoryResponse(humidity: [humidityRecord], fan: [fanRecord]);
-      final b = HistoryResponse(humidity: [humidityRecord], fan: [fanRecord]);
+      final a = HistoryResponse(
+        humidity: [humidityRecord],
+        fan: [fanRecord],
+        config: [configRecord],
+      );
+      final b = HistoryResponse(
+        humidity: [humidityRecord],
+        fan: [fanRecord],
+        config: [configRecord],
+      );
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
     });

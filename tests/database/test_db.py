@@ -6,17 +6,25 @@ from unittest.mock import MagicMock
 import aiosqlite
 import pytest
 
-from air_marshall.api.models import ControlRecord, FanRecord, HumidityRecord
+from air_marshall.api.models import (
+    ConfigRecord,
+    ControlRecord,
+    FanRecord,
+    HumidityRecord,
+)
 from air_marshall.database.db import (
     _parse_datetime,
     create_tables,
     get_db_conn,
+    get_history_config,
     get_history_control,
     get_history_fan,
     get_history_humidity,
+    get_latest_config,
     get_latest_control,
     get_latest_fan,
     get_latest_humidity,
+    insert_config,
     insert_control,
     insert_fan,
     insert_humidity,
@@ -53,6 +61,14 @@ def _control(
     return ControlRecord(timestamp=ts, humidifier_on=humidifier_on, fan_on=fan_on)
 
 
+def _config(
+    ts: datetime = _TS, humidity_low: float = 30.0, humidity_high: float = 50.0
+) -> ConfigRecord:
+    return ConfigRecord(
+        timestamp=ts, humidity_low=humidity_low, humidity_high=humidity_high
+    )
+
+
 class TestCreateTables:
     """Tests for create_tables."""
 
@@ -68,7 +84,7 @@ class TestCreateTables:
             "SELECT name FROM sqlite_master WHERE type='table'"
         )
         tables = {row[0] for row in await cursor.fetchall()}
-        assert {"humidity", "fan", "control"}.issubset(tables)
+        assert {"humidity", "fan", "control", "config"}.issubset(tables)
 
 
 class TestInsertAndGetLatest:
@@ -94,6 +110,12 @@ class TestInsertAndGetLatest:
     ) -> None:
         """get_latest_control returns None on empty table."""
         result = await get_latest_control(db_conn)
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_get_latest_config_empty(self, db_conn: aiosqlite.Connection) -> None:
+        """get_latest_config returns None on empty table."""
+        result = await get_latest_config(db_conn)
         assert result is None
 
     @pytest.mark.asyncio
@@ -127,6 +149,16 @@ class TestInsertAndGetLatest:
         assert result is not None
         assert result.humidifier_on is True
         assert result.fan_on is True
+
+    @pytest.mark.asyncio
+    async def test_config_roundtrip(self, db_conn: aiosqlite.Connection) -> None:
+        """Inserted config record is returned by get_latest_config."""
+        await insert_config(db_conn, _config(humidity_low=35.0, humidity_high=55.0))
+        result = await get_latest_config(db_conn)
+        assert result is not None
+        assert result.humidity_low == pytest.approx(35.0)
+        assert result.humidity_high == pytest.approx(55.0)
+        assert result.timestamp.tzinfo is not None
 
     @pytest.mark.asyncio
     async def test_get_latest_returns_newest(
@@ -225,6 +257,19 @@ class TestGetHistory:
         assert len(results) == 1
 
     @pytest.mark.asyncio
+    async def test_history_config_filters_by_date(
+        self, db_conn: aiosqlite.Connection
+    ) -> None:
+        """get_history_config excludes records before the since cutoff."""
+        old = datetime(2024, 1, 1, tzinfo=UTC)
+        new = datetime(2024, 6, 1, tzinfo=UTC)
+        await insert_config(db_conn, _config(ts=old))
+        await insert_config(db_conn, _config(ts=new))
+        since = datetime(2024, 3, 1, tzinfo=UTC)
+        results = await get_history_config(db_conn, since=since)
+        assert len(results) == 1
+
+    @pytest.mark.asyncio
     async def test_history_empty(self, db_conn: aiosqlite.Connection) -> None:
         """get_history_humidity returns empty list when table is empty."""
         since = datetime(2024, 1, 1, tzinfo=UTC)
@@ -275,13 +320,14 @@ class TestPruneOldRecords:
 
     @pytest.mark.asyncio
     async def test_prune_all_tables(self, db_conn: aiosqlite.Connection) -> None:
-        """prune_old_records applies to humidity, fan, and control tables."""
+        """prune_old_records applies to humidity, fan, control, and config tables."""
         old_ts = datetime.now(tz=UTC) - timedelta(days=40)
         await insert_humidity(db_conn, _humidity(ts=old_ts))
         await insert_fan(db_conn, _fan(ts=old_ts))
         await insert_control(db_conn, _control(ts=old_ts))
+        await insert_config(db_conn, _config(ts=old_ts))
         await prune_old_records(db_conn, retention_days=30)
-        for table in ("humidity", "fan", "control"):
+        for table in ("humidity", "fan", "control", "config"):
             cursor = await db_conn.execute(f"SELECT COUNT(*) FROM {table}")  # noqa: S608
             row = await cursor.fetchone()
             assert row is not None

@@ -27,6 +27,12 @@ _CONTROL = {
     "fan_on": False,
 }
 
+_CONFIG = {
+    "timestamp": _TS.isoformat(),
+    "humidity_low": 30.0,
+    "humidity_high": 50.0,
+}
+
 
 class TestPostHumidity:
     """Tests for POST /data/humidity."""
@@ -182,12 +188,71 @@ class TestPostControl:
         assert resp.json()["control"]["humidifier_on"] is True
 
 
+class TestPostConfig:
+    """Tests for POST /data/config."""
+
+    @pytest.mark.asyncio
+    async def test_returns_201(self, test_client: httpx.AsyncClient) -> None:
+        """Valid request returns 201."""
+        response = await test_client.post(
+            "/data/config",
+            json=_CONFIG,
+            headers={"X-API-Key": "test-key"},
+        )
+        assert response.status_code == 201
+
+    @pytest.mark.asyncio
+    async def test_missing_field_returns_422(
+        self, test_client: httpx.AsyncClient
+    ) -> None:
+        """Missing required field returns 422."""
+        response = await test_client.post(
+            "/data/config",
+            json={"timestamp": _TS.isoformat(), "humidity_low": 30.0},
+            headers={"X-API-Key": "test-key"},
+        )
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_wrong_type_returns_422(self, test_client: httpx.AsyncClient) -> None:
+        """String instead of float is rejected (StrictFloat)."""
+        response = await test_client.post(
+            "/data/config",
+            json={**_CONFIG, "humidity_low": "30.0"},
+            headers={"X-API-Key": "test-key"},
+        )
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_persists_record(self, test_client: httpx.AsyncClient) -> None:
+        """Posted config record appears in GET /data/latest."""
+        await test_client.post(
+            "/data/config",
+            json=_CONFIG,
+            headers={"X-API-Key": "test-key"},
+        )
+        resp = await test_client.get("/data/latest", headers={"X-API-Key": "test-key"})
+        assert resp.json()["config"]["humidity_low"] == 30.0
+
+    @pytest.mark.asyncio
+    async def test_inverted_range_returns_422(
+        self, test_client: httpx.AsyncClient
+    ) -> None:
+        """humidity_low >= humidity_high returns 422."""
+        response = await test_client.post(
+            "/data/config",
+            json={**_CONFIG, "humidity_low": 50.0, "humidity_high": 30.0},
+            headers={"X-API-Key": "test-key"},
+        )
+        assert response.status_code == 422
+
+
 class TestGetLatest:
     """Tests for GET /data/latest."""
 
     @pytest.mark.asyncio
     async def test_empty_db_returns_nulls(self, test_client: httpx.AsyncClient) -> None:
-        """Returns 200 with empty humidity list and null fan/control when database is empty."""
+        """Returns 200 with empty humidity list and null fan/control/config when database is empty."""
         response = await test_client.get(
             "/data/latest", headers={"X-API-Key": "test-key"}
         )
@@ -196,6 +261,7 @@ class TestGetLatest:
         assert body["humidity"] == []
         assert body["fan"] is None
         assert body["control"] is None
+        assert body["config"] is None
 
     @pytest.mark.asyncio
     async def test_returns_posted_humidity(
@@ -253,6 +319,7 @@ class TestGetHistory:
         assert body["humidity"] == []
         assert body["fan"] == []
         assert body["control"] == []
+        assert body["config"] == []
 
     @pytest.mark.asyncio
     async def test_history_includes_recent_records(

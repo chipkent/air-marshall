@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, Strict
+from pydantic import BaseModel, Strict, model_validator
 
 StrictBool = Annotated[bool, Strict()]
 """bool that rejects integer coercion (e.g. ``0``/``1`` → ``False``/``True``)."""
@@ -47,16 +47,37 @@ class ControlRecord(BaseModel):
     fan_on: StrictBool
 
 
+class ConfigRecord(BaseModel):
+    """A control parameter configuration event.
+
+    Attributes:
+        timestamp: When the configuration was applied (timezone-aware).
+        humidity_low: Lower bound of the target humidity range, 0–100.
+        humidity_high: Upper bound of the target humidity range, 0–100.
+    """
+
+    timestamp: datetime
+    humidity_low: StrictFloat
+    humidity_high: StrictFloat
+
+    @model_validator(mode="after")
+    def _humidity_range_valid(self) -> "ConfigRecord":
+        if self.humidity_low >= self.humidity_high:
+            raise ValueError("humidity_low must be strictly less than humidity_high")
+        return self
+
+
 class LatestResponse(BaseModel):
     """The most recent record of each type.
 
     ``humidity`` contains one entry per distinct sensor (empty when no data).
-    ``fan`` and ``control`` are None when no data exists yet.
+    ``fan``, ``control``, and ``config`` are None when no data exists yet.
     """
 
     humidity: list[HumidityRecord] = []
     fan: FanRecord | None = None
     control: ControlRecord | None = None
+    config: ConfigRecord | None = None
 
 
 class HistoryResponse(BaseModel):
@@ -65,3 +86,4 @@ class HistoryResponse(BaseModel):
     humidity: list[HumidityRecord] = []
     fan: list[FanRecord] = []
     control: list[ControlRecord] = []
+    config: list[ConfigRecord] = []

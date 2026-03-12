@@ -3,6 +3,7 @@
 import httpx
 
 from air_marshall.api.models import (
+    ConfigRecord,
     ControlRecord,
     FanRecord,
     HistoryResponse,
@@ -81,6 +82,19 @@ class AirMarshallClient:
         """
         response = await self._client.post(
             "/data/control",
+            json=record.model_dump(mode="json"),
+            headers=self._headers,
+        )
+        self._check_response(response)
+
+    async def post_config(self, record: ConfigRecord) -> None:
+        """POST a configuration record.
+
+        Raises:
+            httpx.HTTPStatusError: On a non-2xx response.
+        """
+        response = await self._client.post(
+            "/data/config",
             json=record.model_dump(mode="json"),
             headers=self._headers,
         )

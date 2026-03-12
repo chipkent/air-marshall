@@ -97,6 +97,7 @@ All endpoints are under `/data`.
 | `POST` | `/data/humidity` | Required | Store a humidity reading. |
 | `POST` | `/data/fan` | Required | Store a fan state event. |
 | `POST` | `/data/control` | Required | Store a control state event. |
+| `POST` | `/data/config` | Required | Store a configuration record. |
 | `GET` | `/data/latest` | Required | Most recent record of each type. Accepts `?sensor_id=` to filter humidity. |
 | `GET` | `/data/history` | Required | All records within the retention window. |
 

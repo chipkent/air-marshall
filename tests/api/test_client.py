@@ -11,6 +11,7 @@ import pytest
 
 from air_marshall.api.client import AirMarshallClient
 from air_marshall.api.models import (
+    ConfigRecord,
     ControlRecord,
     FanRecord,
     HistoryResponse,
@@ -38,6 +39,10 @@ def _fan() -> FanRecord:
 
 def _control() -> ControlRecord:
     return ControlRecord(timestamp=_TS, humidifier_on=True, fan_on=False)
+
+
+def _config() -> ConfigRecord:
+    return ConfigRecord(timestamp=_TS, humidity_low=30.0, humidity_high=50.0)
 
 
 class _MockTransport(httpx.AsyncBaseTransport):
@@ -149,6 +154,37 @@ class TestPostControl:
             await client.post_control(_control())
         assert transport.last_request is not None
         assert transport.last_request.url.path == "/data/control"
+
+
+class TestPostConfig:
+    """Tests for AirMarshallClient.post_config."""
+
+    @pytest.mark.asyncio
+    async def test_sends_post_to_correct_path(self) -> None:
+        """post_config sends a POST to /data/config."""
+        transport = _MockTransport(status_code=201)
+        async with _make_client(transport) as client:
+            await client.post_config(_config())
+        assert transport.last_request is not None
+        assert transport.last_request.method == "POST"
+        assert transport.last_request.url.path == "/data/config"
+
+    @pytest.mark.asyncio
+    async def test_sends_api_key_header(self) -> None:
+        """post_config includes the X-API-Key header."""
+        transport = _MockTransport(status_code=201)
+        async with _make_client(transport) as client:
+            await client.post_config(_config())
+        assert transport.last_request is not None
+        assert transport.last_request.headers["x-api-key"] == "test-key"
+
+    @pytest.mark.asyncio
+    async def test_raises_on_error_status(self) -> None:
+        """post_config raises HTTPStatusError on 4xx/5xx responses."""
+        transport = _MockTransport(status_code=401)
+        async with _make_client(transport) as client:
+            with pytest.raises(httpx.HTTPStatusError):
+                await client.post_config(_config())
 
 
 class TestGetLatest:

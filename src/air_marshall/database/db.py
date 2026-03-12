@@ -16,7 +16,12 @@ from datetime import UTC, datetime, timedelta
 import aiosqlite
 from fastapi import Request
 
-from air_marshall.api.models import ControlRecord, FanRecord, HumidityRecord
+from air_marshall.api.models import (
+    ConfigRecord,
+    ControlRecord,
+    FanRecord,
+    HumidityRecord,
+)
 
 
 async def get_db_conn(request: Request) -> aiosqlite.Connection:
@@ -33,7 +38,7 @@ async def get_db_conn(request: Request) -> aiosqlite.Connection:
 
 
 async def create_tables(conn: aiosqlite.Connection) -> None:
-    """Create the ``humidity``, ``fan``, and ``control`` tables if absent.
+    """Create the ``humidity``, ``fan``, ``control``, and ``config`` tables if absent.
 
     Idempotent — safe to call on every startup. Also sets WAL journal mode.
     """
@@ -62,6 +67,14 @@ async def create_tables(conn: aiosqlite.Connection) -> None:
             timestamp TEXT NOT NULL,
             humidifier_on INTEGER NOT NULL,
             fan_on INTEGER NOT NULL
+        )"""
+    )
+    await conn.execute(
+        """CREATE TABLE IF NOT EXISTS config (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            humidity_low REAL NOT NULL,
+            humidity_high REAL NOT NULL
         )"""
     )
     await conn.commit()
@@ -102,6 +115,19 @@ async def insert_control(conn: aiosqlite.Connection, record: ControlRecord) -> N
             record.timestamp.astimezone(UTC).isoformat(),
             1 if record.humidifier_on else 0,
             1 if record.fan_on else 0,
+        ),
+    )
+    await conn.commit()
+
+
+async def insert_config(conn: aiosqlite.Connection, record: ConfigRecord) -> None:
+    """Insert a configuration record."""
+    await conn.execute(
+        "INSERT INTO config (timestamp, humidity_low, humidity_high) VALUES (?, ?, ?)",
+        (
+            record.timestamp.astimezone(UTC).isoformat(),
+            record.humidity_low,
+            record.humidity_high,
         ),
     )
     await conn.commit()
@@ -196,6 +222,21 @@ async def get_latest_control(conn: aiosqlite.Connection) -> ControlRecord | None
     )
 
 
+async def get_latest_config(conn: aiosqlite.Connection) -> ConfigRecord | None:
+    """Return the most recent configuration record, or None if the table is empty."""
+    cursor = await conn.execute(
+        "SELECT timestamp, humidity_low, humidity_high FROM config ORDER BY timestamp DESC LIMIT 1"
+    )
+    row = await cursor.fetchone()
+    if row is None:
+        return None
+    return ConfigRecord(
+        timestamp=_parse_datetime(str(row[0])),
+        humidity_low=float(row[1]),
+        humidity_high=float(row[2]),
+    )
+
+
 async def get_history_humidity(
     conn: aiosqlite.Connection, since: datetime
 ) -> list[HumidityRecord]:
@@ -262,10 +303,33 @@ async def get_history_control(
     ]
 
 
+async def get_history_config(
+    conn: aiosqlite.Connection, since: datetime
+) -> list[ConfigRecord]:
+    """Return all configuration records at or after ``since``, ordered by timestamp ascending."""
+    cursor = await conn.execute(
+        """SELECT timestamp, humidity_low, humidity_high
+           FROM config
+           WHERE timestamp >= ?
+           ORDER BY timestamp ASC""",
+        (since.isoformat(),),
+    )
+    rows = await cursor.fetchall()
+    return [
+        ConfigRecord(
+            timestamp=_parse_datetime(str(row[0])),
+            humidity_low=float(row[1]),
+            humidity_high=float(row[2]),
+        )
+        for row in rows
+    ]
+
+
 async def prune_old_records(conn: aiosqlite.Connection, retention_days: int) -> None:
     """Delete records older than ``retention_days`` days from all tables."""
     cutoff = (datetime.now(tz=UTC) - timedelta(days=retention_days)).isoformat()
     await conn.execute("DELETE FROM humidity WHERE timestamp < ?", (cutoff,))
     await conn.execute("DELETE FROM fan WHERE timestamp < ?", (cutoff,))
     await conn.execute("DELETE FROM control WHERE timestamp < ?", (cutoff,))
+    await conn.execute("DELETE FROM config WHERE timestamp < ?", (cutoff,))
     await conn.commit()

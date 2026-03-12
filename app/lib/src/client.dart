@@ -83,6 +83,12 @@ class ApiClient {
   Future<void> postControl(ControlRecord record) =>
       _post('/data/control', record.toJson());
 
+  /// Posts a [ConfigRecord] to `/data/config`.
+  ///
+  /// Throws [http.ClientException] on a non-2xx response.
+  Future<void> postConfig(ConfigRecord record) =>
+      _post('/data/config', record.toJson());
+
   /// Fetches the most recent record for each data category from `/data/latest`.
   ///
   /// If [sensorId] is provided it is forwarded as the `sensor_id` query

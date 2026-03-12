@@ -6,6 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from air_marshall.api.models import (
+    ConfigRecord,
     ControlRecord,
     FanRecord,
     HistoryResponse,
@@ -116,15 +117,45 @@ class TestControlRecord:
             ControlRecord(timestamp=_TS, humidifier_on=0, fan_on=1)  # type: ignore[arg-type]
 
 
+class TestConfigRecord:
+    """Tests for ConfigRecord."""
+
+    def test_valid_construction(self) -> None:
+        """ConfigRecord accepts all valid fields."""
+        r = ConfigRecord(timestamp=_TS, humidity_low=30.0, humidity_high=50.0)
+        assert r.humidity_low == 30.0
+        assert r.humidity_high == 50.0
+
+    def test_strict_float_rejects_string(self) -> None:
+        """StrictFloat rejects a string where float is expected."""
+        with pytest.raises(ValidationError):
+            ConfigRecord(
+                timestamp=_TS,
+                humidity_low="30.0",  # type: ignore[arg-type]
+                humidity_high=50.0,
+            )
+
+    def test_rejects_equal_humidity_bounds(self) -> None:
+        """Equal humidity_low and humidity_high raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ConfigRecord(timestamp=_TS, humidity_low=50.0, humidity_high=50.0)
+
+    def test_rejects_inverted_humidity_bounds(self) -> None:
+        """humidity_low greater than humidity_high raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ConfigRecord(timestamp=_TS, humidity_low=60.0, humidity_high=40.0)
+
+
 class TestLatestResponse:
     """Tests for LatestResponse."""
 
     def test_defaults(self) -> None:
-        """LatestResponse humidity defaults to empty list; fan and control default to None."""
+        """LatestResponse humidity defaults to empty list; fan, control, and config default to None."""
         r = LatestResponse()
         assert r.humidity == []
         assert r.fan is None
         assert r.control is None
+        assert r.config is None
 
     def test_accepts_records(self) -> None:
         """LatestResponse accepts populated record fields."""
@@ -154,6 +185,7 @@ class TestHistoryResponse:
         assert r.humidity == []
         assert r.fan == []
         assert r.control == []
+        assert r.config == []
 
     def test_accepts_lists(self) -> None:
         """HistoryResponse accepts non-empty record lists."""

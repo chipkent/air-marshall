@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
 
 from air_marshall.api.models import (
+    ConfigRecord,
     ControlRecord,
     FanRecord,
     HistoryResponse,
@@ -20,12 +21,15 @@ from air_marshall.database.auth import require_api_key
 from air_marshall.database.config import Settings, get_settings
 from air_marshall.database.db import (
     get_db_conn,
+    get_history_config,
     get_history_control,
     get_history_fan,
     get_history_humidity,
+    get_latest_config,
     get_latest_control,
     get_latest_fan,
     get_latest_humidity,
+    insert_config,
     insert_control,
     insert_fan,
     insert_humidity,
@@ -68,6 +72,17 @@ async def post_control(
     return Response(status_code=201)
 
 
+@router.post("/config", status_code=201, response_class=Response)
+async def post_config(
+    record: ConfigRecord,
+    conn: aiosqlite.Connection = Depends(get_db_conn),
+    _: None = Depends(require_api_key),
+) -> Response:
+    """Store a new configuration record."""
+    await insert_config(conn, record)
+    return Response(status_code=201)
+
+
 @router.get("/latest")
 async def get_latest(
     sensor_id: str | None = Query(default=None),
@@ -82,7 +97,8 @@ async def get_latest(
     humidity = await get_latest_humidity(conn, sensor_id=sensor_id)
     fan = await get_latest_fan(conn)
     control = await get_latest_control(conn)
-    return LatestResponse(humidity=humidity, fan=fan, control=control)
+    config = await get_latest_config(conn)
+    return LatestResponse(humidity=humidity, fan=fan, control=control, config=config)
 
 
 @router.get("/history")
@@ -96,4 +112,5 @@ async def get_history(
     humidity = await get_history_humidity(conn, since=since)
     fan = await get_history_fan(conn, since=since)
     control = await get_history_control(conn, since=since)
-    return HistoryResponse(humidity=humidity, fan=fan, control=control)
+    config = await get_history_config(conn, since=since)
+    return HistoryResponse(humidity=humidity, fan=fan, control=control, config=config)

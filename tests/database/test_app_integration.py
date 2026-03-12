@@ -16,7 +16,7 @@ import pytest
 import uvicorn
 
 from air_marshall.api.client import AirMarshallClient
-from air_marshall.api.models import HumidityRecord
+from air_marshall.api.models import ConfigRecord, HumidityRecord
 from air_marshall.database.app import app
 from air_marshall.database.config import get_settings
 
@@ -148,6 +148,22 @@ async def test_full_roundtrip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
             body = resp.json()
             assert body["control"]["humidifier_on"] is True
 
+            # --- config: POST then verify in GET /data/latest ---
+            resp = await client.post(
+                "/data/config",
+                json={
+                    "timestamp": _TS.isoformat(),
+                    "humidity_low": 30.0,
+                    "humidity_high": 50.0,
+                },
+                headers={"X-API-Key": "ikey"},
+            )
+            assert resp.status_code == 201
+
+            resp = await client.get("/data/latest", headers={"X-API-Key": "ikey"})
+            body = resp.json()
+            assert body["config"]["humidity_low"] == 30.0
+
             # --- multi-sensor: post s2, GET /data/latest returns both s1 and s2 ---
             resp = await client.post(
                 "/data/humidity",
@@ -189,6 +205,13 @@ async def test_full_roundtrip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
             latest = await api_client.get_latest(sensor_id="s_py")
             assert len(latest.humidity) == 1
             assert latest.humidity[0].sensor_id == "s_py"
+
+            config_record = ConfigRecord(
+                timestamp=_TS,
+                humidity_low=30.0,
+                humidity_high=50.0,
+            )
+            await api_client.post_config(config_record)
 
     finally:
         if server is not None:
