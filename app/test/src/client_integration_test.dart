@@ -10,6 +10,7 @@
 ///
 /// If the server is not reachable, all tests are skipped automatically.
 /// Run with: `flutter test --tags integration`
+// ignore_for_file: avoid_print
 @Tags(['integration'])
 library;
 
@@ -31,6 +32,7 @@ void main() {
   var serverReachable = false;
 
   setUpAll(() async {
+    print('[setUpAll] checking server at $baseUrl');
     try {
       final client = http.Client();
       final response = await client
@@ -41,14 +43,21 @@ void main() {
           .timeout(const Duration(seconds: 5));
       client.close();
       serverReachable = response.statusCode < 500;
-    } catch (_) {
+      print(
+        '[setUpAll] server status: ${response.statusCode}, reachable=$serverReachable',
+      );
+    } catch (e) {
+      print('[setUpAll] server check failed: $e');
       serverReachable = false;
     }
   });
 
   setUp(() {
     if (!serverReachable) {
+      print('[setUp] skipping — server not reachable');
       markTestSkipped('DB server not reachable at $baseUrl');
+    } else {
+      print('[setUp] server reachable, running test');
     }
   });
 
@@ -111,6 +120,27 @@ void main() {
     expect(latest.control, isNotNull);
     expect(latest.control!.humidifierOn, isTrue);
     expect(latest.control!.fanOn, isFalse);
+  });
+
+  // ---------------------------------------------------------------------------
+  // postConfig → getLatest
+  // ---------------------------------------------------------------------------
+
+  test('postConfig then getLatest has config populated', () async {
+    final client = ApiClient(baseUrl: baseUrl, apiKey: apiKey);
+    addTearDown(client.close);
+
+    final record = ConfigRecord(
+      timestamp: ts,
+      humidityLow: 30.0,
+      humidityHigh: 50.0,
+    );
+    await client.postConfig(record);
+
+    final latest = await client.getLatest();
+    expect(latest.config, isNotNull);
+    expect(latest.config!.humidityLow, 30.0);
+    expect(latest.config!.humidityHigh, 50.0);
   });
 
   // ---------------------------------------------------------------------------
@@ -178,7 +208,7 @@ void main() {
     final client = ApiClient(baseUrl: baseUrl, apiKey: 'wrong-key');
     addTearDown(client.close);
 
-    expect(() => client.getLatest(), throwsA(isA<http.ClientException>()));
+    await expectLater(client.getLatest(), throwsA(isA<http.ClientException>()));
   });
 
   // ---------------------------------------------------------------------------

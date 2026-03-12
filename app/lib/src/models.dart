@@ -181,10 +181,60 @@ class ControlRecord {
       'ControlRecord(timestamp: $timestamp, humidifierOn: $humidifierOn, fanOn: $fanOn)';
 }
 
+/// A control parameter configuration record.
+@immutable
+class ConfigRecord {
+  /// UTC time at which the configuration was applied.
+  final DateTime timestamp;
+
+  /// Lower bound of the target humidity range, 0–100.
+  final double humidityLow;
+
+  /// Upper bound of the target humidity range, 0–100.
+  final double humidityHigh;
+
+  const ConfigRecord({
+    required this.timestamp,
+    required this.humidityLow,
+    required this.humidityHigh,
+  });
+
+  /// Deserializes a [ConfigRecord] from a JSON map with snake_case keys.
+  factory ConfigRecord.fromJson(Map<String, dynamic> json) => ConfigRecord(
+    timestamp: DateTime.parse(json['timestamp'] as String),
+    humidityLow: (json['humidity_low'] as num).toDouble(),
+    humidityHigh: (json['humidity_high'] as num).toDouble(),
+  );
+
+  /// Serializes this record to a JSON map with snake_case keys and ISO 8601 timestamps.
+  Map<String, dynamic> toJson() => {
+    'timestamp': timestamp.toIso8601String(),
+    'humidity_low': humidityLow,
+    'humidity_high': humidityHigh,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConfigRecord &&
+          runtimeType == other.runtimeType &&
+          timestamp == other.timestamp &&
+          humidityLow == other.humidityLow &&
+          humidityHigh == other.humidityHigh;
+
+  @override
+  int get hashCode => Object.hash(timestamp, humidityLow, humidityHigh);
+
+  @override
+  String toString() =>
+      'ConfigRecord(timestamp: $timestamp, humidityLow: $humidityLow, humidityHigh: $humidityHigh)';
+}
+
 /// The response payload from the `/data/latest` endpoint.
 ///
 /// [humidity] contains the most recent reading from each known sensor (one
-/// entry per sensor). [fan] and [control] are `null` when no record exists yet.
+/// entry per sensor). [fan], [control], and [config] are `null` when no
+/// record exists yet.
 @immutable
 class LatestResponse {
   /// Most recent humidity reading from each sensor; empty when no data exists.
@@ -196,7 +246,15 @@ class LatestResponse {
   /// Most recent HVAC control state, or `null` if none has been recorded yet.
   final ControlRecord? control;
 
-  const LatestResponse({this.humidity = const [], this.fan, this.control});
+  /// Most recent configuration record, or `null` if none has been recorded yet.
+  final ConfigRecord? config;
+
+  const LatestResponse({
+    this.humidity = const [],
+    this.fan,
+    this.control,
+    this.config,
+  });
 
   /// Deserializes a [LatestResponse] from a JSON map with snake_case keys.
   factory LatestResponse.fromJson(Map<String, dynamic> json) => LatestResponse(
@@ -211,6 +269,9 @@ class LatestResponse {
     control: json['control'] != null
         ? ControlRecord.fromJson(json['control'] as Map<String, dynamic>)
         : null,
+    config: json['config'] != null
+        ? ConfigRecord.fromJson(json['config'] as Map<String, dynamic>)
+        : null,
   );
 
   /// Serializes this response to a JSON map with snake_case keys.
@@ -218,6 +279,7 @@ class LatestResponse {
     'humidity': humidity.map((e) => e.toJson()).toList(),
     'fan': fan?.toJson(),
     'control': control?.toJson(),
+    'config': config?.toJson(),
   };
 
   @override
@@ -227,14 +289,16 @@ class LatestResponse {
           runtimeType == other.runtimeType &&
           _listEquals(humidity, other.humidity) &&
           fan == other.fan &&
-          control == other.control;
+          control == other.control &&
+          config == other.config;
 
   @override
-  int get hashCode => Object.hash(Object.hashAll(humidity), fan, control);
+  int get hashCode =>
+      Object.hash(Object.hashAll(humidity), fan, control, config);
 
   @override
   String toString() =>
-      'LatestResponse(humidity: $humidity, fan: $fan, control: $control)';
+      'LatestResponse(humidity: $humidity, fan: $fan, control: $control, config: $config)';
 }
 
 /// The response payload from the `/data/history` endpoint.
@@ -251,10 +315,14 @@ class HistoryResponse {
   /// HVAC control state records in ascending timestamp order.
   final List<ControlRecord> control;
 
+  /// Configuration records in ascending timestamp order.
+  final List<ConfigRecord> config;
+
   const HistoryResponse({
     this.humidity = const [],
     this.fan = const [],
     this.control = const [],
+    this.config = const [],
   });
 
   /// Deserializes a [HistoryResponse] from a JSON map with snake_case keys.
@@ -275,6 +343,11 @@ class HistoryResponse {
                 ?.map((e) => ControlRecord.fromJson(e as Map<String, dynamic>))
                 .toList() ??
             [],
+        config:
+            (json['config'] as List<dynamic>?)
+                ?.map((e) => ConfigRecord.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            [],
       );
 
   /// Serializes this response to a JSON map with snake_case keys.
@@ -282,6 +355,7 @@ class HistoryResponse {
     'humidity': humidity.map((e) => e.toJson()).toList(),
     'fan': fan.map((e) => e.toJson()).toList(),
     'control': control.map((e) => e.toJson()).toList(),
+    'config': config.map((e) => e.toJson()).toList(),
   };
 
   @override
@@ -291,16 +365,18 @@ class HistoryResponse {
           runtimeType == other.runtimeType &&
           _listEquals(humidity, other.humidity) &&
           _listEquals(fan, other.fan) &&
-          _listEquals(control, other.control);
+          _listEquals(control, other.control) &&
+          _listEquals(config, other.config);
 
   @override
   int get hashCode => Object.hash(
     Object.hashAll(humidity),
     Object.hashAll(fan),
     Object.hashAll(control),
+    Object.hashAll(config),
   );
 
   @override
   String toString() =>
-      'HistoryResponse(humidity: $humidity, fan: $fan, control: $control)';
+      'HistoryResponse(humidity: $humidity, fan: $fan, control: $control, config: $config)';
 }

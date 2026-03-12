@@ -51,6 +51,12 @@ void main() {
     fanOn: false,
   );
 
+  final sampleConfig = ConfigRecord(
+    timestamp: DateTime.utc(2024, 1, 1),
+    humidityLow: 30.0,
+    humidityHigh: 50.0,
+  );
+
   // ---------------------------------------------------------------------------
   // postHumidity
   // ---------------------------------------------------------------------------
@@ -77,8 +83,8 @@ void main() {
 
     test('throws on non-2xx response', () async {
       final client = makeClient((_) => http.Response('error', 401));
-      expect(
-        () => client.postHumidity(sampleHumidity),
+      await expectLater(
+        client.postHumidity(sampleHumidity),
         throwsA(isA<http.ClientException>()),
       );
       client.close();
@@ -104,8 +110,8 @@ void main() {
 
     test('throws on non-2xx response', () async {
       final client = makeClient((_) => http.Response('error', 500));
-      expect(
-        () => client.postFan(sampleFan),
+      await expectLater(
+        client.postFan(sampleFan),
         throwsA(isA<http.ClientException>()),
       );
       client.close();
@@ -132,8 +138,36 @@ void main() {
 
     test('throws on non-2xx response', () async {
       final client = makeClient((_) => http.Response('error', 403));
-      expect(
-        () => client.postControl(sampleControl),
+      await expectLater(
+        client.postControl(sampleControl),
+        throwsA(isA<http.ClientException>()),
+      );
+      client.close();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // postConfig
+  // ---------------------------------------------------------------------------
+
+  group('postConfig', () {
+    test('sends POST to /data/config with correct headers and body', () async {
+      final client = makeClient((_) => okResponse());
+      await client.postConfig(sampleConfig);
+      expect(captured.length, 1);
+      expect(captured[0].method, 'POST');
+      expect(captured[0].url.path, '/data/config');
+      expect(captured[0].headers['X-API-Key'], apiKey);
+      final body = jsonDecode(captured[0].body) as Map<String, dynamic>;
+      expect(body['humidity_low'], 30.0);
+      expect(body['humidity_high'], 50.0);
+      client.close();
+    });
+
+    test('throws on non-2xx response', () async {
+      final client = makeClient((_) => http.Response('error', 403));
+      await expectLater(
+        client.postConfig(sampleConfig),
         throwsA(isA<http.ClientException>()),
       );
       client.close();
@@ -186,7 +220,10 @@ void main() {
 
     test('throws on non-2xx response', () async {
       final client = makeClient((_) => http.Response('error', 503));
-      expect(() => client.getLatest(), throwsA(isA<http.ClientException>()));
+      await expectLater(
+        client.getLatest(),
+        throwsA(isA<http.ClientException>()),
+      );
       client.close();
     });
   });
@@ -226,7 +263,10 @@ void main() {
 
     test('throws on non-2xx response', () async {
       final client = makeClient((_) => http.Response('error', 500));
-      expect(() => client.getHistory(), throwsA(isA<http.ClientException>()));
+      await expectLater(
+        client.getHistory(),
+        throwsA(isA<http.ClientException>()),
+      );
       client.close();
     });
   });

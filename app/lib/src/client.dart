@@ -8,6 +8,7 @@ import 'models.dart';
 ///
 /// All requests include an `X-API-Key` header for authentication.
 /// Non-2xx responses raise an [http.ClientException].
+/// All requests time out after 30 seconds, raising a [TimeoutException].
 ///
 /// Example:
 /// ```dart
@@ -57,31 +58,44 @@ class ApiClient {
   /// POSTs [body] as JSON to [path] relative to [baseUrl].
   ///
   /// Throws [http.ClientException] on a non-2xx response.
+  /// Throws [TimeoutException] if no response is received within 30 seconds.
   Future<void> _post(String path, Map<String, dynamic> body) async {
-    final response = await _client.post(
-      Uri.parse('$baseUrl$path'),
-      headers: _headers,
-      body: jsonEncode(body),
-    );
+    final response = await _client
+        .post(
+          Uri.parse('$baseUrl$path'),
+          headers: _headers,
+          body: jsonEncode(body),
+        )
+        .timeout(const Duration(seconds: 30));
     _checkResponse(response);
   }
 
   /// Posts a [HumidityRecord] to `/data/humidity`.
   ///
   /// Throws [http.ClientException] on a non-2xx response.
+  /// Throws [TimeoutException] if no response is received within 30 seconds.
   Future<void> postHumidity(HumidityRecord record) =>
       _post('/data/humidity', record.toJson());
 
   /// Posts a [FanRecord] to `/data/fan`.
   ///
   /// Throws [http.ClientException] on a non-2xx response.
+  /// Throws [TimeoutException] if no response is received within 30 seconds.
   Future<void> postFan(FanRecord record) => _post('/data/fan', record.toJson());
 
   /// Posts a [ControlRecord] to `/data/control`.
   ///
   /// Throws [http.ClientException] on a non-2xx response.
+  /// Throws [TimeoutException] if no response is received within 30 seconds.
   Future<void> postControl(ControlRecord record) =>
       _post('/data/control', record.toJson());
+
+  /// Posts a [ConfigRecord] to `/data/config`.
+  ///
+  /// Throws [http.ClientException] on a non-2xx response.
+  /// Throws [TimeoutException] if no response is received within 30 seconds.
+  Future<void> postConfig(ConfigRecord record) =>
+      _post('/data/config', record.toJson());
 
   /// Fetches the most recent record for each data category from `/data/latest`.
   ///
@@ -89,11 +103,14 @@ class ApiClient {
   /// parameter so the backend can filter humidity records by sensor.
   ///
   /// Throws [http.ClientException] on a non-2xx response.
+  /// Throws [TimeoutException] if no response is received within 30 seconds.
   Future<LatestResponse> getLatest({String? sensorId}) async {
     final uri = Uri.parse('$baseUrl/data/latest').replace(
       queryParameters: sensorId != null ? {'sensor_id': sensorId} : null,
     );
-    final response = await _client.get(uri, headers: _headers);
+    final response = await _client
+        .get(uri, headers: _headers)
+        .timeout(const Duration(seconds: 30));
     _checkResponse(response);
     return LatestResponse.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
@@ -103,11 +120,11 @@ class ApiClient {
   /// Fetches historical records for all data categories from `/data/history`.
   ///
   /// Throws [http.ClientException] on a non-2xx response.
+  /// Throws [TimeoutException] if no response is received within 30 seconds.
   Future<HistoryResponse> getHistory() async {
-    final response = await _client.get(
-      Uri.parse('$baseUrl/data/history'),
-      headers: _headers,
-    );
+    final response = await _client
+        .get(Uri.parse('$baseUrl/data/history'), headers: _headers)
+        .timeout(const Duration(seconds: 30));
     _checkResponse(response);
     return HistoryResponse.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
