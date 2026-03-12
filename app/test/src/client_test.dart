@@ -83,8 +83,8 @@ void main() {
 
     test('throws on non-2xx response', () async {
       final client = makeClient((_) => http.Response('error', 401));
-      expect(
-        () => client.postHumidity(sampleHumidity),
+      await expectLater(
+        client.postHumidity(sampleHumidity),
         throwsA(isA<http.ClientException>()),
       );
       client.close();
@@ -110,8 +110,8 @@ void main() {
 
     test('throws on non-2xx response', () async {
       final client = makeClient((_) => http.Response('error', 500));
-      expect(
-        () => client.postFan(sampleFan),
+      await expectLater(
+        client.postFan(sampleFan),
         throwsA(isA<http.ClientException>()),
       );
       client.close();
@@ -138,8 +138,8 @@ void main() {
 
     test('throws on non-2xx response', () async {
       final client = makeClient((_) => http.Response('error', 403));
-      expect(
-        () => client.postControl(sampleControl),
+      await expectLater(
+        client.postControl(sampleControl),
         throwsA(isA<http.ClientException>()),
       );
       client.close();
@@ -166,8 +166,8 @@ void main() {
 
     test('throws on non-2xx response', () async {
       final client = makeClient((_) => http.Response('error', 403));
-      expect(
-        () => client.postConfig(sampleConfig),
+      await expectLater(
+        client.postConfig(sampleConfig),
         throwsA(isA<http.ClientException>()),
       );
       client.close();
@@ -220,7 +220,10 @@ void main() {
 
     test('throws on non-2xx response', () async {
       final client = makeClient((_) => http.Response('error', 503));
-      expect(() => client.getLatest(), throwsA(isA<http.ClientException>()));
+      await expectLater(
+        client.getLatest(),
+        throwsA(isA<http.ClientException>()),
+      );
       client.close();
     });
   });
@@ -260,7 +263,10 @@ void main() {
 
     test('throws on non-2xx response', () async {
       final client = makeClient((_) => http.Response('error', 500));
-      expect(() => client.getHistory(), throwsA(isA<http.ClientException>()));
+      await expectLater(
+        client.getHistory(),
+        throwsA(isA<http.ClientException>()),
+      );
       client.close();
     });
   });
