@@ -9,10 +9,14 @@ dependencies = [
 
 [project.scripts]
 air-marshall-db = "air_marshall.database.__main__:main"
+air-marshall-publish = "air_marshall.monitor.__main__:main"
 
 [project.optional-dependencies]
 hvac = []      # RPi deps for HVAC controller (e.g. RPi.GPIO, pimoroni HAT libs)
-monitor = []   # RPi deps for monitor (e.g. sensor libraries)
+monitor = [
+    "pyserial>=3.5",
+    # automationhat requires RPi hardware libs (spidev); install manually on the monitor RPi
+]
 database = [
     "fastapi>=0.111",
     "uvicorn[standard]>=0.29",
@@ -72,7 +76,7 @@ disallow_untyped_calls = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-m 'not integration' --cov=air_marshall --cov-report=term-missing --cov-report=xml"
+addopts = "-m 'not integration and not hardware' --cov=air_marshall --cov-report=term-missing --cov-report=xml"
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
@@ -81,7 +85,8 @@ filterwarnings = [
     "ignore::DeprecationWarning:uvicorn",
 ]
 markers = [
-    "integration: marks tests requiring live hardware or external services (deselect with '-m not integration'). Tests requiring RPi hardware must skip gracefully when hardware is unavailable (e.g. pytest.importorskip or a custom skip fixture).",
+    "integration: marks tests requiring live external services (deselect with '-m not integration').",
+    "hardware: marks tests requiring physical RPi hardware. Run only via bin/test-hardware.sh on the target device.",
 ]
 
 [tool.coverage.run]
