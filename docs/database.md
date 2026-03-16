@@ -94,7 +94,7 @@ All endpoints are under `/data`.
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `POST` | `/data/humidity` | Required | Store a humidity reading. |
+| `POST` | `/data/humidity` | Required | Store a humidity reading. `temperature` is degrees Celsius; `humidity` is relative humidity 0–100. |
 | `POST` | `/data/fan` | Required | Store a fan state event. |
 | `POST` | `/data/control` | Required | Store a control state event. |
 | `POST` | `/data/config` | Required | Store a configuration record. |

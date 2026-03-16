@@ -28,15 +28,21 @@ pip install automationhat
 ## CLI reference
 
 ```text
-air-marshall-publish --publish {humidity|fan|both} --name SENSOR_NAME [--interval SECONDS] [--port PATH]
+air-marshall-publish --publish SENSOR [SENSOR ...] [--humidity-name NAME] [--sensor-interval SECONDS]
+                     [--humidity-port PATH] [--fan-input {1,2,3}]
+                     [--weather-zip ZIPCODE] [--weather-name NAME] [--weather-interval SECONDS]
 ```
 
 | Flag | Default | Description |
 |---|---|---|
-| `--publish` | — (required) | `humidity`, `fan`, or `both` |
-| `--name` | — (required) | Logical sensor identifier stored in each record |
-| `--interval` | `30` | Seconds between publish cycles |
-| `--port` | `/dev/ttyACM0` | Serial port for the SHT45 Trinkey (ignored when `--publish fan`) |
+| `--publish` | — | One or more of: `humidity`, `fan`, `weather` (required; multiple allowed) |
+| `--humidity-name` | — | Logical sensor identifier stored in each humidity record (required with `--publish humidity`) |
+| `--sensor-interval` | `30` | Seconds between hardware sensor publish cycles |
+| `--humidity-port` | `/dev/ttyACM0` | Serial port for the SHT45 Trinkey |
+| `--fan-input` | — | Automation HAT digital input number for the fan sensor (`1`, `2`, or `3`; required with `--publish fan`) |
+| `--weather-zip` | `80919` | US zip code for outdoor weather publishing via Open-Meteo |
+| `--weather-name` | `outdoor` | `sensor_id` stored in each outdoor weather record |
+| `--weather-interval` | `300` | Seconds between outdoor weather publish cycles |
 
 ### Examples
 
@@ -45,14 +51,25 @@ Publish humidity only, every 30 seconds:
 ```sh
 export AIR_MARSHALL_BASE_URL=http://pi4:8000
 export AIR_MARSHALL_API_KEY=your-api-key-here
-air-marshall-publish --publish humidity --name living-room --interval 30
+air-marshall-publish --publish humidity --humidity-name living-room --sensor-interval 30
 ```
 
 Publish both humidity and fan state, every 60 seconds:
 
 ```sh
-air-marshall-publish --publish both --name living-room --fan-input 1
+air-marshall-publish --publish humidity fan --humidity-name living-room --fan-input 1
 ```
+
+Publish indoor humidity and outdoor weather simultaneously:
+
+```sh
+air-marshall-publish --publish humidity weather --humidity-name living-room \
+  --weather-zip 80919 --weather-interval 300
+```
+
+The hardware sensor loop and the weather loop run independently at their own
+cadences. Outdoor weather records land in the same humidity table under the
+`sensor_id` set by `--weather-name` (default `outdoor`).
 
 ## Hardware wiring
 
@@ -65,8 +82,8 @@ emits one CSV line per reading over USB serial:
 <temperature_c>,<humidity_pct>,<is_touched_0_or_1>,<serial_number_hex>
 ```
 
-The device typically appears as `/dev/ttyACM0`. Use `--port` to specify a different path
-if multiple USB serial devices are present.
+The device typically appears as `/dev/ttyACM0`. Use `--humidity-port` to specify a
+different path if multiple USB serial devices are present.
 
 ### Automation HAT (fan state)
 
@@ -86,7 +103,7 @@ async def main() -> None:
     client = AirMarshallClient(base_url="http://pi4:8000", api_key="your-api-key-here")
     humidity_reader = SHT45Reader(port="/dev/ttyACM0", sensor_id="living-room")
     publisher = MonitorPublisher(client=client, humidity_reader=humidity_reader)
-    await publisher.run(interval=30.0)
+    await publisher.run(sensor_interval=30.0, weather_interval=300.0)
 
 asyncio.run(main())
 ```
@@ -115,7 +132,7 @@ After=network.target
 Type=simple
 User=pi
 EnvironmentFile=/etc/air-marshall/publish.env
-ExecStart=/home/pi/.venv/bin/air-marshall-publish --publish both --name living-room --interval 60 --fan-input 1
+ExecStart=/home/pi/.venv/bin/air-marshall-publish --publish humidity fan weather --humidity-name living-room --sensor-interval 60 --fan-input 1 --weather-zip 80919
 Restart=on-failure
 RestartSec=10
 

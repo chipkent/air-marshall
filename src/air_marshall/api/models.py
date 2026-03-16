@@ -13,52 +13,51 @@ StrictFloat = Annotated[float, Strict()]
 
 
 class HumidityRecord(BaseModel):
-    """A humidity and temperature reading from a sensor.
-
-    Attributes:
-        sensor_id: Logical sensor identifier (e.g. "living_room").
-        sensor_serial_number: Hardware serial number burned into the sensor.
-        timestamp: When the reading was taken (timezone-aware).
-        temperature: Degrees Celsius.
-        humidity: Relative humidity, 0–100.
-        is_touched: True when the sensor was physically touched at sample time.
-    """
+    """A humidity and temperature reading from a sensor."""
 
     sensor_id: str
+    """Logical sensor identifier (e.g. ``"living_room"``)."""
     sensor_serial_number: str
+    """Hardware serial number burned into the sensor."""
     timestamp: datetime
+    """When the reading was taken (timezone-aware)."""
     temperature: StrictFloat
+    """Degrees Celsius."""
     humidity: StrictFloat
+    """Relative humidity, 0–100."""
     is_touched: StrictBool
+    """True when the sensor was physically touched at sample time."""
 
 
 class FanRecord(BaseModel):
     """A fan on/off state change event."""
 
     timestamp: datetime
+    """When the state change occurred (timezone-aware)."""
     is_on: StrictBool
+    """True when the fan transitioned to on; False when it turned off."""
 
 
 class ControlRecord(BaseModel):
     """An HVAC control output state change event."""
 
     timestamp: datetime
+    """When the state change occurred (timezone-aware)."""
     humidifier_on: StrictBool
+    """True when the humidifier output is active."""
     fan_on: StrictBool
+    """True when the fan output is active."""
 
 
 class ConfigRecord(BaseModel):
-    """A control parameter configuration event.
-
-    Attributes:
-        timestamp: When the configuration was applied (timezone-aware).
-        humidity_low: Lower bound of the target humidity range, 0–100.
-        humidity_high: Upper bound of the target humidity range, 0–100.
-    """
+    """A control parameter configuration event."""
 
     timestamp: datetime
+    """When the configuration was applied (timezone-aware)."""
     humidity_low: StrictFloat
+    """Lower bound of the target humidity range, 0–100."""
     humidity_high: StrictFloat
+    """Upper bound of the target humidity range, 0–100."""
 
     @model_validator(mode="after")
     def _humidity_range_valid(self) -> "ConfigRecord":

@@ -20,6 +20,15 @@ _HUMIDITY_RECORD = HumidityRecord(
     is_touched=False,
 )
 
+_WEATHER_RECORD = HumidityRecord(
+    sensor_id="outdoor",
+    sensor_serial_number="open-meteo",
+    timestamp=_TS,
+    temperature=18.5,
+    humidity=62.0,
+    is_touched=False,
+)
+
 _FAN_RECORD = FanRecord(timestamp=_TS, is_on=True)
 
 
@@ -32,6 +41,12 @@ def _make_humidity_reader() -> MagicMock:
 def _make_fan_reader() -> MagicMock:
     reader = MagicMock()
     reader.read.return_value = _FAN_RECORD
+    return reader
+
+
+def _make_weather_reader() -> MagicMock:
+    reader = MagicMock()
+    reader.read = AsyncMock(return_value=_WEATHER_RECORD)
     return reader
 
 
@@ -114,7 +129,7 @@ class TestRun:
 
         with patch("air_marshall.monitor.publisher.asyncio.sleep", fake_sleep):
             with pytest.raises(asyncio.CancelledError):
-                await publisher.run(interval=0.0)
+                await publisher.run(sensor_interval=0.0, weather_interval=0.0)
 
         assert client.post_humidity.call_count == 3
 
@@ -138,7 +153,147 @@ class TestRun:
 
         with patch("air_marshall.monitor.publisher.asyncio.sleep", fake_sleep):
             with pytest.raises(asyncio.CancelledError):
-                await publisher.run(interval=0.0)
+                await publisher.run(sensor_interval=0.0, weather_interval=0.0)
 
         # Called twice — first raised, second succeeded
         assert client.post_humidity.call_count == 2
+
+
+class TestPublishWeatherOnce:
+    """Tests for MonitorPublisher.publish_weather_once."""
+
+    @pytest.mark.asyncio
+    async def test_calls_read_and_post_humidity(self) -> None:
+        """publish_weather_once reads the weather reader and posts the record."""
+        client = _make_client()
+        weather_reader = _make_weather_reader()
+        publisher = MonitorPublisher(client=client, weather_reader=weather_reader)
+
+        await publisher.publish_weather_once()
+
+        weather_reader.read.assert_called_once()
+        client.post_humidity.assert_called_once_with(_WEATHER_RECORD)
+
+    @pytest.mark.asyncio
+    async def test_noop_without_weather_reader(self) -> None:
+        """publish_weather_once does nothing when no weather reader is set."""
+        client = _make_client()
+        publisher = MonitorPublisher(client=client)
+
+        await publisher.publish_weather_once()
+
+        client.post_humidity.assert_not_called()
+
+
+class TestRunTaskStructure:
+    """Tests for MonitorPublisher.run task structure."""
+
+    @pytest.mark.asyncio
+    async def test_run_sensor_reader_creates_sensor_task(self) -> None:
+        """run() launches the sensor loop when a hardware reader is set."""
+        client = _make_client()
+        publisher = MonitorPublisher(
+            client=client, humidity_reader=_make_humidity_reader()
+        )
+
+        with (
+            patch.object(
+                publisher, "_run_sensor_loop", new_callable=AsyncMock
+            ) as mock_sensor,
+            patch.object(
+                publisher, "_run_weather_loop", new_callable=AsyncMock
+            ) as mock_weather,
+        ):
+            await publisher.run(sensor_interval=5.0, weather_interval=300.0)
+
+        mock_sensor.assert_called_once_with(5.0)
+        mock_weather.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_run_no_readers_creates_no_tasks(self) -> None:
+        """run() completes immediately when no readers are set."""
+        client = _make_client()
+        publisher = MonitorPublisher(client=client)
+
+        with (
+            patch.object(
+                publisher, "_run_sensor_loop", new_callable=AsyncMock
+            ) as mock_sensor,
+            patch.object(
+                publisher, "_run_weather_loop", new_callable=AsyncMock
+            ) as mock_weather,
+        ):
+            await publisher.run(sensor_interval=5.0, weather_interval=300.0)
+
+        mock_sensor.assert_not_called()
+        mock_weather.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_run_with_weather_reader_creates_two_tasks(self) -> None:
+        """run() launches both loops when hardware and weather readers are set."""
+        client = _make_client()
+        publisher = MonitorPublisher(
+            client=client,
+            humidity_reader=_make_humidity_reader(),
+            weather_reader=_make_weather_reader(),
+        )
+
+        with (
+            patch.object(
+                publisher, "_run_sensor_loop", new_callable=AsyncMock
+            ) as mock_sensor,
+            patch.object(
+                publisher, "_run_weather_loop", new_callable=AsyncMock
+            ) as mock_weather,
+        ):
+            await publisher.run(sensor_interval=5.0, weather_interval=300.0)
+
+        mock_sensor.assert_called_once_with(5.0)
+        mock_weather.assert_called_once_with(300.0)
+
+    @pytest.mark.asyncio
+    async def test_run_weather_interval_ignored_without_weather_reader(self) -> None:
+        """run() does not start a weather loop even when weather_interval is provided."""
+        client = _make_client()
+        publisher = MonitorPublisher(
+            client=client, humidity_reader=_make_humidity_reader()
+        )
+
+        with (
+            patch.object(publisher, "_run_sensor_loop", new_callable=AsyncMock),
+            patch.object(
+                publisher, "_run_weather_loop", new_callable=AsyncMock
+            ) as mock_weather,
+        ):
+            await publisher.run(sensor_interval=5.0, weather_interval=300.0)
+
+        mock_weather.assert_not_called()
+
+
+class TestRunWeatherLoop:
+    """Tests for MonitorPublisher._run_weather_loop."""
+
+    @pytest.mark.asyncio
+    async def test_catches_exceptions_and_continues(self) -> None:
+        """_run_weather_loop logs exceptions and keeps running."""
+        client = _make_client()
+        weather_reader = _make_weather_reader()
+        weather_reader.read = AsyncMock(
+            side_effect=[RuntimeError("network error"), _WEATHER_RECORD]
+        )
+        publisher = MonitorPublisher(client=client, weather_reader=weather_reader)
+
+        call_count = 0
+
+        async def fake_sleep(_: float) -> None:
+            nonlocal call_count
+            call_count += 1
+            if call_count >= 2:
+                raise asyncio.CancelledError
+
+        with patch("air_marshall.monitor.publisher.asyncio.sleep", fake_sleep):
+            with pytest.raises(asyncio.CancelledError):
+                await publisher._run_weather_loop(0.0)
+
+        # read() called twice — first raised, second succeeded
+        assert weather_reader.read.call_count == 2

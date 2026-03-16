@@ -15,6 +15,7 @@ air-marshall-publish = "air_marshall.monitor.__main__:main"
 hvac = []      # RPi deps for HVAC controller (e.g. RPi.GPIO, pimoroni HAT libs)
 monitor = [
     "pyserial>=3.5",
+    "zipcodes>=1.0",
     # automationhat requires RPi hardware libs (spidev); install manually on the monitor RPi
 ]
 database = [
