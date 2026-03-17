@@ -18,6 +18,7 @@ source = { editable = "." }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
+    { name = "zipcodes" },
 ]
 
 [package.optional-dependencies]
@@ -39,7 +40,6 @@ dev = [
     { name = "pytest-timeout" },
     { name = "ruff" },
     { name = "uvicorn", extra = ["standard"] },
-    { name = "zipcodes" },
 ]
 lint = [
     { name = "mypy" },
@@ -47,7 +47,6 @@ lint = [
 ]
 monitor = [
     { name = "pyserial" },
-    { name = "zipcodes" },
 ]
 test = [
     { name = "pytest" },
@@ -72,7 +71,7 @@ requires-dist = [
     { name = "pytest-timeout", marker = "extra == 'test'", specifier = ">=2.1" },
     { name = "ruff", marker = "extra == 'lint'", specifier = ">=0.1" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'database'", specifier = ">=0.29" },
-    { name = "zipcodes", marker = "extra == 'monitor'", specifier = ">=1.0" },
+    { name = "zipcodes", specifier = ">=1.0" },
 ]
 provides-extras = ["hvac", "monitor", "database", "test", "lint", "dev"]
 

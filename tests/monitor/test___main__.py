@@ -376,7 +376,7 @@ class TestValidArgs:
             patch("air_marshall.monitor.__main__.AirMarshallClient"),
             patch("air_marshall.monitor.__main__.MonitorPublisher", mock_publisher_cls),
             patch("air_marshall.monitor.__main__.OpenMeteoReader"),
-            patch("zipcodes.matching", mock_zipcodes),
+            patch("air_marshall.monitor.__main__.zipcodes.matching", mock_zipcodes),
             patch("air_marshall.monitor.__main__.asyncio.run", _asyncio_run),
         ):
             from air_marshall.monitor.__main__ import main
