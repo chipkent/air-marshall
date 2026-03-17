@@ -83,6 +83,13 @@ class TestSHT45ReaderRead:
         with pytest.raises(ValueError, match="Cannot parse CSV line"):
             reader.read()
 
+    def test_raises_value_error_on_invalid_is_touched(self) -> None:
+        """read() raises ValueError when the is_touched field is not 0 or 1."""
+        serial = _make_serial("22.5,45.0,2,ABCD1234\n")
+        reader = SHT45Reader(port="/dev/ttyACM0", sensor_id="s1", serial_port=serial)
+        with pytest.raises(ValueError, match="Expected is_touched to be 0 or 1"):
+            reader.read()
+
     def test_timestamp_is_utc(self) -> None:
         """read() sets timestamp to a timezone-aware UTC datetime."""
         serial = _make_serial("22.5,45.0,0,ABCD1234\n")

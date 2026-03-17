@@ -158,6 +158,54 @@ class TestInvalidArgs:
             main()
         assert exc_info.value.code != 0
 
+    def test_zero_sensor_interval_exits(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """main() exits when --sensor-interval is 0."""
+        monkeypatch.setenv("AIR_MARSHALL_BASE_URL", "http://test")
+        monkeypatch.setenv("AIR_MARSHALL_API_KEY", "key")
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "cmd",
+                "--publish",
+                "humidity",
+                "--humidity-name",
+                "s1",
+                "--sensor-interval",
+                "0",
+            ],
+        )
+        from air_marshall.monitor.__main__ import main
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code != 0
+
+    def test_negative_weather_interval_exits(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """main() exits when --weather-interval is negative."""
+        monkeypatch.setenv("AIR_MARSHALL_BASE_URL", "http://test")
+        monkeypatch.setenv("AIR_MARSHALL_API_KEY", "key")
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "cmd",
+                "--publish",
+                "humidity",
+                "--humidity-name",
+                "s1",
+                "--weather-interval",
+                "-1",
+            ],
+        )
+        from air_marshall.monitor.__main__ import main
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code != 0
+
 
 class TestValidArgs:
     """Tests for main() with valid arguments and environment."""

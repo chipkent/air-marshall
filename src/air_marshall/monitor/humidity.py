@@ -58,10 +58,17 @@ class SHT45Reader:
         try:
             temperature = float(parts[0])
             humidity = float(parts[1])
-            is_touched = bool(int(parts[2]))
+            is_touched_raw = int(parts[2])
             sensor_serial_number = parts[3]
         except (IndexError, ValueError) as exc:
-            raise ValueError(f"Cannot parse CSV line: {line!r}") from exc
+            raise ValueError(
+                f"Cannot parse CSV line (expected '<temp_c>,<humidity_pct>,<is_touched>,<serial>'): {line!r}"
+            ) from exc
+        if is_touched_raw not in (0, 1):
+            raise ValueError(
+                f"Expected is_touched to be 0 or 1, got {is_touched_raw!r} in CSV line: {line!r}"
+            )
+        is_touched = bool(is_touched_raw)
         return HumidityRecord(
             sensor_id=self._sensor_id,
             sensor_serial_number=sensor_serial_number,

@@ -115,6 +115,10 @@ def main() -> None:
         parser.error("--humidity-name is required when publishing humidity")
     if "fan" in publish and args.fan_input is None:
         parser.error("--fan-input is required when publishing fan")
+    if args.sensor_interval <= 0:
+        parser.error("--sensor-interval must be greater than 0")
+    if args.weather_interval <= 0:
+        parser.error("--weather-interval must be greater than 0")
 
     base_url = os.environ.get("AIR_MARSHALL_BASE_URL")
     if not base_url:
