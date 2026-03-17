@@ -18,6 +18,7 @@ source = { editable = "." }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
+    { name = "pyserial" },
     { name = "zipcodes" },
 ]
 
@@ -33,7 +34,6 @@ dev = [
     { name = "fastapi" },
     { name = "mypy" },
     { name = "pydantic-settings" },
-    { name = "pyserial" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -44,9 +44,6 @@ dev = [
 lint = [
     { name = "mypy" },
     { name = "ruff" },
-]
-monitor = [
-    { name = "pyserial" },
 ]
 test = [
     { name = "pytest" },
@@ -64,7 +61,7 @@ requires-dist = [
     { name = "mypy", marker = "extra == 'lint'", specifier = ">=1.6" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pydantic-settings", marker = "extra == 'database'", specifier = ">=2.2" },
-    { name = "pyserial", marker = "extra == 'monitor'", specifier = ">=3.5" },
+    { name = "pyserial", specifier = ">=3.5" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=0.23" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=4.1" },

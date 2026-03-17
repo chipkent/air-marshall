@@ -269,6 +269,23 @@ class TestRunTaskStructure:
 
         mock_weather.assert_not_called()
 
+    @pytest.mark.asyncio
+    async def test_cancelled_error_from_publish_once_propagates(self) -> None:
+        """CancelledError raised inside publish_once propagates out of _run_sensor_loop."""
+        client = _make_client()
+        publisher = MonitorPublisher(
+            client=client, humidity_reader=_make_humidity_reader()
+        )
+
+        with patch.object(
+            publisher,
+            "publish_once",
+            new_callable=AsyncMock,
+            side_effect=asyncio.CancelledError,
+        ):
+            with pytest.raises(asyncio.CancelledError):
+                await publisher._run_sensor_loop(0.0)
+
 
 class TestRunWeatherLoop:
     """Tests for MonitorPublisher._run_weather_loop."""
@@ -297,3 +314,20 @@ class TestRunWeatherLoop:
 
         # read() called twice — first raised, second succeeded
         assert weather_reader.read.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_cancelled_error_from_publish_weather_once_propagates(self) -> None:
+        """CancelledError raised inside publish_weather_once propagates out of _run_weather_loop."""
+        client = _make_client()
+        publisher = MonitorPublisher(
+            client=client, weather_reader=_make_weather_reader()
+        )
+
+        with patch.object(
+            publisher,
+            "publish_weather_once",
+            new_callable=AsyncMock,
+            side_effect=asyncio.CancelledError,
+        ):
+            with pytest.raises(asyncio.CancelledError):
+                await publisher._run_weather_loop(0.0)
