@@ -136,6 +136,13 @@ def main() -> None:
         )
         sys.exit(1)
 
+    weather_coords: tuple[float, float] | None = None
+    if "weather" in publish:
+        matches = zipcodes.matching(args.weather_zip)
+        if not matches:
+            parser.error(f"Unknown zip code: {args.weather_zip!r}")
+        weather_coords = (float(matches[0]["lat"]), float(matches[0]["long"]))
+
     humidity_reader: SHT45Reader | None = (
         SHT45Reader(port=args.humidity_port, sensor_id=args.humidity_name)
         if "humidity" in publish
@@ -147,16 +154,15 @@ def main() -> None:
         else None
     )
 
-    weather_reader: OpenMeteoReader | None = None
-    if "weather" in publish:
-        matches = zipcodes.matching(args.weather_zip)
-        if not matches:
-            parser.error(f"Unknown zip code: {args.weather_zip!r}")
-        weather_reader = OpenMeteoReader(
-            latitude=float(matches[0]["lat"]),
-            longitude=float(matches[0]["long"]),
+    weather_reader: OpenMeteoReader | None = (
+        OpenMeteoReader(
+            latitude=weather_coords[0],
+            longitude=weather_coords[1],
             sensor_id=args.weather_name,
         )
+        if weather_coords is not None
+        else None
+    )
 
     async def _run() -> None:
         async with AirMarshallClient(base_url=base_url, api_key=api_key) as client:
