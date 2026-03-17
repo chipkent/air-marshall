@@ -82,6 +82,30 @@ class TestHumidityRecord:
                 is_touched=False,
             )
 
+    def test_humidity_above_100_rejected(self) -> None:
+        """Humidity above 100 raises ValidationError."""
+        with pytest.raises(ValidationError):
+            HumidityRecord(
+                sensor_id="s1",
+                sensor_serial_number="SN001",
+                timestamp=_TS,
+                temperature=22.5,
+                humidity=110.0,
+                is_touched=False,
+            )
+
+    def test_humidity_below_0_rejected(self) -> None:
+        """Humidity below 0 raises ValidationError."""
+        with pytest.raises(ValidationError):
+            HumidityRecord(
+                sensor_id="s1",
+                sensor_serial_number="SN001",
+                timestamp=_TS,
+                temperature=22.5,
+                humidity=-1.0,
+                is_touched=False,
+            )
+
 
 class TestFanRecord:
     """Tests for FanRecord."""
@@ -144,6 +168,26 @@ class TestConfigRecord:
         """humidity_low greater than humidity_high raises ValidationError."""
         with pytest.raises(ValidationError):
             ConfigRecord(timestamp=_TS, humidity_low=60.0, humidity_high=40.0)
+
+    def test_humidity_low_above_100_rejected(self) -> None:
+        """humidity_low above 100 raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ConfigRecord(timestamp=_TS, humidity_low=101.0, humidity_high=105.0)
+
+    def test_humidity_high_above_100_rejected(self) -> None:
+        """humidity_high above 100 raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ConfigRecord(timestamp=_TS, humidity_low=30.0, humidity_high=101.0)
+
+    def test_humidity_low_below_0_rejected(self) -> None:
+        """humidity_low below 0 raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ConfigRecord(timestamp=_TS, humidity_low=-1.0, humidity_high=50.0)
+
+    def test_humidity_high_below_0_rejected(self) -> None:
+        """humidity_high below 0 raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ConfigRecord(timestamp=_TS, humidity_low=30.0, humidity_high=-1.0)
 
 
 class TestLatestResponse:

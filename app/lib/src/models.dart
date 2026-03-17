@@ -187,10 +187,10 @@ class ConfigRecord {
   /// UTC time at which the configuration was applied.
   final DateTime timestamp;
 
-  /// Lower bound of the target humidity range, 0–100.
+  /// Lower bound of the target humidity range, 0–100. Must be strictly less than [humidityHigh].
   final double humidityLow;
 
-  /// Upper bound of the target humidity range, 0–100.
+  /// Upper bound of the target humidity range, 0–100. Must be strictly greater than [humidityLow].
   final double humidityHigh;
 
   const ConfigRecord({

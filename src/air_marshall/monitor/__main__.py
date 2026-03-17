@@ -14,7 +14,6 @@ from air_marshall.monitor.humidity import SHT45Reader
 from air_marshall.monitor.publisher import MonitorPublisher
 from air_marshall.monitor.weather import OpenMeteoReader
 
-logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
 
 _DEFAULT_INTERVAL = 30.0
@@ -32,9 +31,16 @@ _DEFAULT_ZIP = "80919"
 _PUBLISH_CHOICES = frozenset({"humidity", "fan", "weather"})
 """Valid individual --publish values."""
 
+_DEFAULT_LOG_LEVEL = "info"
+"""Default logging level for the monitor publisher."""
+
 
 def main() -> None:
     """Run the air-marshall monitor publisher CLI."""
+    log_level = os.environ.get(
+        "AIR_MARSHALL_MONITOR_LOG_LEVEL", _DEFAULT_LOG_LEVEL
+    ).upper()
+    logging.basicConfig(level=log_level)
     parser = argparse.ArgumentParser(
         description="Read sensors and publish to the air-marshall database service."
     )
@@ -140,23 +146,24 @@ def main() -> None:
             sensor_id=args.weather_name,
         )
 
-    client = AirMarshallClient(base_url=base_url, api_key=api_key)
-    publisher = MonitorPublisher(
-        client=client,
-        humidity_reader=humidity_reader,
-        fan_reader=fan_reader,
-        weather_reader=weather_reader,
-    )
-
     async def _run() -> None:
-        try:
-            await publisher.run(
-                sensor_interval=args.sensor_interval,
-                weather_interval=args.weather_interval,
+        async with AirMarshallClient(base_url=base_url, api_key=api_key) as client:
+            publisher = MonitorPublisher(
+                client=client,
+                humidity_reader=humidity_reader,
+                fan_reader=fan_reader,
+                weather_reader=weather_reader,
             )
-        finally:
-            if weather_reader is not None:
-                await weather_reader.close()
+            try:
+                await publisher.run(
+                    sensor_interval=args.sensor_interval,
+                    weather_interval=args.weather_interval,
+                )
+            finally:
+                if weather_reader is not None:
+                    await weather_reader.close()
+                if humidity_reader is not None:
+                    humidity_reader.close()
 
     try:
         asyncio.run(_run())

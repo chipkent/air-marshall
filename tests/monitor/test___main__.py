@@ -14,7 +14,7 @@ _real_asyncio_run = _asyncio.run
 
 
 def _asyncio_run(coro: object) -> None:
-    """asyncio.run wrapper that preserves the current event loop for pytest-asyncio.
+    """asyncio.run wrapper that explicitly closes the pre-existing event loop.
 
     pytest-asyncio >=1.x saves and restores the current event loop around each async
     test via _temporary_event_loop_policy. In Python 3.12+, if no current loop exists,
@@ -22,8 +22,8 @@ def _asyncio_run(coro: object) -> None:
     set_event_loop(None), dropping the policy's reference to that loop; it then gets
     GC'd mid-test with closed=False, triggering ResourceWarning -> test failure.
 
-    Saving and restoring the current loop here keeps the orphaned loop alive (referenced
-    by the policy) for the entire test session so it is only GC'd at process exit.
+    Capturing the loop before asyncio.run() and explicitly closing it afterward ensures
+    the loop is always closed cleanly, preventing the ResourceWarning.
     """
     with _warnings.catch_warnings():
         _warnings.simplefilter("ignore", DeprecationWarning)
@@ -37,6 +37,39 @@ def _asyncio_run(coro: object) -> None:
 
 
 _VALID_ZIP_MATCH = [{"lat": "39.0", "long": "-104.9", "zip_code": "80919"}]
+
+
+class TestLogging:
+    """Tests for logging configuration in main()."""
+
+    def test_debug_log_level_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """AIR_MARSHALL_MONITOR_LOG_LEVEL=debug results in basicConfig called with level='DEBUG'."""
+        monkeypatch.setenv("AIR_MARSHALL_BASE_URL", "http://pi:8000")
+        monkeypatch.setenv("AIR_MARSHALL_API_KEY", "secret")
+        monkeypatch.setenv("AIR_MARSHALL_MONITOR_LOG_LEVEL", "debug")
+        monkeypatch.setattr(
+            sys, "argv", ["cmd", "--publish", "humidity", "--humidity-name", "s1"]
+        )
+
+        mock_publisher_instance = MagicMock()
+        mock_publisher_instance.run = AsyncMock()
+        mock_publisher_cls = MagicMock(return_value=mock_publisher_instance)
+
+        with (
+            patch("air_marshall.monitor.__main__.SHT45Reader"),
+            patch("air_marshall.monitor.__main__.AirMarshallClient"),
+            patch("air_marshall.monitor.__main__.MonitorPublisher", mock_publisher_cls),
+            patch("air_marshall.monitor.__main__.OpenMeteoReader"),
+            patch("air_marshall.monitor.__main__.asyncio.run", _asyncio_run),
+            patch(
+                "air_marshall.monitor.__main__.logging.basicConfig"
+            ) as mock_basicconfig,
+        ):
+            from air_marshall.monitor.__main__ import main
+
+            main()
+
+        mock_basicconfig.assert_called_once_with(level="DEBUG")
 
 
 class TestMissingEnvVars:
@@ -279,7 +312,7 @@ class TestValidArgs:
             patch("air_marshall.monitor.__main__.AirMarshallClient"),
             patch("air_marshall.monitor.__main__.MonitorPublisher", mock_publisher_cls),
             patch("air_marshall.monitor.__main__.OpenMeteoReader"),
-            patch("air_marshall.monitor.__main__.zipcodes.matching", mock_zipcodes),
+            patch("zipcodes.matching", mock_zipcodes),
             patch("air_marshall.monitor.__main__.asyncio.run", _asyncio_run),
         ):
             from air_marshall.monitor.__main__ import main

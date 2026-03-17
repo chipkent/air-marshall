@@ -24,6 +24,21 @@ pip install automationhat
 |---|---|---|
 | `AIR_MARSHALL_BASE_URL` | Yes | Base URL of the database service (e.g. `http://pi4:8000`) |
 | `AIR_MARSHALL_API_KEY` | Yes | Shared API key for authentication |
+| `AIR_MARSHALL_MONITOR_LOG_LEVEL` | No | Log level: `debug`, `info`, `warning`, `error`, `critical` (default: `info`) |
+
+## Debugging
+
+To enable verbose logging for a single run:
+
+```sh
+AIR_MARSHALL_MONITOR_LOG_LEVEL=debug air-marshall-publish --publish humidity --humidity-name living-room
+```
+
+Or in the systemd `EnvironmentFile` (`/etc/air-marshall/publish.env`) for a persistent change:
+
+```sh
+AIR_MARSHALL_MONITOR_LOG_LEVEL=debug
+```
 
 ## CLI reference
 

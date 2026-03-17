@@ -75,7 +75,7 @@ The commitizen pre-commit hook enforces this on `commit-msg`.
 - Do not access private members (underscore-prefixed) across package boundaries. Test files may access the code they test.
 - When moving or removing files, use `git mv` / `git rm` to preserve history.
 - Use American English spelling throughout code, comments, docstrings, and docs.
-- Write Python docstrings in Google style. Module-level constants and Pydantic model fields use an inline docstring (triple-quoted string immediately after the assignment), not a `#` comment.
+- Write Python docstrings in Google style. Module-level constants use an inline docstring (triple-quoted string immediately after the assignment), not a `#` comment. Pydantic model fields use `Field(description=...)` so the description is surfaced in the JSON schema and OpenAPI docs.
 - Keep docstrings in sync with the code. When you rename, restructure, or move code, update all affected docstrings in the same change. Stale docstrings are bugs.
 - Docstrings must add information beyond what the name and type signature already convey. Do not restate the obvious.
 - Do not put operational information (how to run, env vars, deployment) in docstrings. That belongs in external docs. Do not cross-reference external files from docstrings — file paths change and the reference will drift.

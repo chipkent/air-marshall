@@ -5,7 +5,7 @@ import socket
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import uvicorn
@@ -103,6 +103,76 @@ async def test_publish_once_posts_to_live_server(
 
         assert latest.fan is not None
         assert latest.fan.is_on is True
+
+    finally:
+        server.should_exit = True
+        thread.join(timeout=5)
+        sock.close()
+        get_settings.cache_clear()
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_publish_weather_once_posts_to_live_server(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """publish_weather_once() delivers a weather record to a live DB server."""
+    db_file = str(tmp_path / "test.db")
+    monkeypatch.setenv("AIR_MARSHALL_DB_API_KEY", "weather-key")
+    monkeypatch.setenv("AIR_MARSHALL_DB_DB_PATH", db_file)
+    get_settings.cache_clear()
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+
+    config = uvicorn.Config(app, log_level="error")
+    server = _QuietServer(config=config)
+    thread = threading.Thread(
+        target=server.run, kwargs={"sockets": [sock]}, daemon=True
+    )
+    thread.start()
+
+    base_url = f"http://127.0.0.1:{port}"
+
+    import httpx
+
+    for _ in range(20):
+        try:
+            async with httpx.AsyncClient() as probe:
+                await probe.get(
+                    f"{base_url}/data/latest", headers={"X-API-Key": "weather-key"}
+                )
+            break
+        except httpx.ConnectError:
+            await asyncio.sleep(0.1)
+    else:
+        pytest.fail("Server did not become reachable within 2 seconds")
+
+    try:
+        weather_record = HumidityRecord(
+            sensor_id="weather-test",
+            sensor_serial_number="",
+            timestamp=_TS,
+            temperature=5.0,
+            humidity=70.0,
+            is_touched=False,
+        )
+        weather_reader = AsyncMock()
+        weather_reader.read.return_value = weather_record
+
+        async with AirMarshallClient(
+            base_url=base_url, api_key="weather-key"
+        ) as client:
+            publisher = MonitorPublisher(client=client, weather_reader=weather_reader)
+            await publisher.publish_weather_once()
+            latest = await client.get_latest(sensor_id="weather-test")
+
+        assert len(latest.humidity) == 1
+        assert latest.humidity[0].sensor_id == "weather-test"
+        assert latest.humidity[0].temperature == 5.0
+        assert latest.humidity[0].humidity == 70.0
 
     finally:
         server.should_exit = True
