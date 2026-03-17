@@ -16,30 +16,24 @@ name = "air-marshall"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "aiosqlite" },
+    { name = "fastapi" },
     { name = "httpx" },
     { name = "pydantic" },
+    { name = "pydantic-settings" },
     { name = "pyserial" },
+    { name = "uvicorn", extra = ["standard"] },
     { name = "zipcodes" },
 ]
 
 [package.optional-dependencies]
-database = [
-    { name = "aiosqlite" },
-    { name = "fastapi" },
-    { name = "pydantic-settings" },
-    { name = "uvicorn", extra = ["standard"] },
-]
 dev = [
-    { name = "aiosqlite" },
-    { name = "fastapi" },
     { name = "mypy" },
-    { name = "pydantic-settings" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "pytest-timeout" },
     { name = "ruff" },
-    { name = "uvicorn", extra = ["standard"] },
 ]
 lint = [
     { name = "mypy" },
@@ -54,23 +48,23 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiosqlite", marker = "extra == 'database'", specifier = ">=0.20" },
-    { name = "air-marshall", extras = ["hvac", "monitor", "database", "test", "lint"], marker = "extra == 'dev'" },
-    { name = "fastapi", marker = "extra == 'database'", specifier = ">=0.111" },
+    { name = "aiosqlite", specifier = ">=0.20" },
+    { name = "air-marshall", extras = ["test", "lint"], marker = "extra == 'dev'" },
+    { name = "fastapi", specifier = ">=0.111" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "mypy", marker = "extra == 'lint'", specifier = ">=1.6" },
     { name = "pydantic", specifier = ">=2.0" },
-    { name = "pydantic-settings", marker = "extra == 'database'", specifier = ">=2.2" },
+    { name = "pydantic-settings", specifier = ">=2.2" },
     { name = "pyserial", specifier = ">=3.5" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=0.23" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=4.1" },
     { name = "pytest-timeout", marker = "extra == 'test'", specifier = ">=2.1" },
     { name = "ruff", marker = "extra == 'lint'", specifier = ">=0.1" },
-    { name = "uvicorn", extras = ["standard"], marker = "extra == 'database'", specifier = ">=0.29" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.29" },
     { name = "zipcodes", specifier = ">=1.0" },
 ]
-provides-extras = ["hvac", "monitor", "database", "test", "lint", "dev"]
+provides-extras = ["test", "lint", "dev"]
 
 [[package]]
 name = "annotated-doc"

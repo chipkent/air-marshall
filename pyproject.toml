@@ -3,9 +3,13 @@ name = "air-marshall"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
+    "aiosqlite>=0.20",
+    "fastapi>=0.111",
     "httpx>=0.27",
     "pydantic>=2.0",
+    "pydantic-settings>=2.2",
     "pyserial>=3.5",
+    "uvicorn[standard]>=0.29",
     "zipcodes>=1.0",
 ]
 
@@ -14,16 +18,6 @@ air-marshall-db = "air_marshall.database.__main__:main"
 air-marshall-publish = "air_marshall.monitor.__main__:main"
 
 [project.optional-dependencies]
-hvac = []      # RPi deps for HVAC controller (e.g. RPi.GPIO, pimoroni HAT libs)
-monitor = [
-    # automationhat requires RPi hardware libs (spidev); install manually on the monitor RPi
-]
-database = [
-    "fastapi>=0.111",
-    "uvicorn[standard]>=0.29",
-    "aiosqlite>=0.20",
-    "pydantic-settings>=2.2",
-]
 test = [
     "pytest>=8.0",
     "pytest-cov>=4.1",
@@ -34,7 +28,7 @@ lint = [
     "ruff>=0.1",
     "mypy>=1.6",
 ]
-dev = ["air-marshall[hvac,monitor,database,test,lint]"]
+dev = ["air-marshall[test,lint]"]
 
 [build-system]
 requires = ["setuptools>=61"]

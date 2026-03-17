@@ -5,10 +5,8 @@ air-marshall database service.
 
 ## Installation
 
-Install the package with the `monitor` extra to pull in the required libraries:
-
 ```sh
-uv sync --extra monitor
+uv sync
 ```
 
 On the monitor Raspberry Pi, also install the Automation HAT library manually (it requires
