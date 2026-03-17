@@ -115,10 +115,16 @@ from air_marshall.api.client import AirMarshallClient
 from air_marshall.monitor import MonitorPublisher, SHT45Reader, AutomationHatFanReader
 
 async def main() -> None:
-    client = AirMarshallClient(base_url="http://pi4:8000", api_key="your-api-key-here")
     humidity_reader = SHT45Reader(port="/dev/ttyACM0", sensor_id="living-room")
-    publisher = MonitorPublisher(client=client, humidity_reader=humidity_reader)
-    await publisher.run(sensor_interval=30.0, weather_interval=300.0)
+    try:
+        async with AirMarshallClient(
+            base_url="http://pi4:8000",
+            api_key="your-api-key-here",
+        ) as client:
+            publisher = MonitorPublisher(client=client, humidity_reader=humidity_reader)
+            await publisher.run(sensor_interval=30.0, weather_interval=300.0)
+    finally:
+        humidity_reader.close()
 
 asyncio.run(main())
 ```
