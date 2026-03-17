@@ -78,6 +78,8 @@ class MonitorPublisher:
         while True:
             try:
                 await self.publish_once()
+            except asyncio.CancelledError:
+                raise
             except Exception:
                 _logger.exception("Error during publish_once")
             await asyncio.sleep(sensor_interval)
@@ -87,6 +89,8 @@ class MonitorPublisher:
         while True:
             try:
                 await self.publish_weather_once()
+            except asyncio.CancelledError:
+                raise
             except Exception:
                 _logger.exception("Error during publish_weather_once")
             await asyncio.sleep(interval)
