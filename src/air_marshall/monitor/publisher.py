@@ -40,10 +40,10 @@ class MonitorPublisher:
         Only sensors whose readers were provided at construction time are published.
         """
         if self._humidity_reader is not None:
-            humidity_record = self._humidity_reader.read()
+            humidity_record = await asyncio.to_thread(self._humidity_reader.read)
             await self._client.post_humidity(humidity_record)
         if self._fan_reader is not None:
-            fan_record = self._fan_reader.read()
+            fan_record = await asyncio.to_thread(self._fan_reader.read)
             await self._client.post_fan(fan_record)
 
     async def publish_weather_once(self) -> None:

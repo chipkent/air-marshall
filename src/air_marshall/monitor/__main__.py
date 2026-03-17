@@ -37,9 +37,17 @@ _DEFAULT_LOG_LEVEL = "info"
 
 def main() -> None:
     """Run the air-marshall monitor publisher CLI."""
+    _VALID_LOG_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
     log_level = os.environ.get(
         "AIR_MARSHALL_MONITOR_LOG_LEVEL", _DEFAULT_LOG_LEVEL
     ).upper()
+    if log_level not in _VALID_LOG_LEVELS:
+        print(
+            f"Error: AIR_MARSHALL_MONITOR_LOG_LEVEL={log_level!r} is not a valid log level. "
+            f"Choose from: {', '.join(sorted(_VALID_LOG_LEVELS))}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     logging.basicConfig(level=log_level)
     parser = argparse.ArgumentParser(
         description="Read sensors and publish to the air-marshall database service."

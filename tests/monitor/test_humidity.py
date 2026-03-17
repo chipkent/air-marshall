@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from air_marshall.monitor.humidity import BAUD_RATE, SHT45Reader
+from air_marshall.monitor.humidity import BAUD_RATE, READ_TIMEOUT, SHT45Reader
 
 
 def _make_serial(line: str) -> MagicMock:
@@ -92,6 +92,17 @@ class TestSHT45ReaderRead:
         assert record.timestamp.tzinfo == UTC
 
 
+class TestSHT45ReaderTimeout:
+    """Tests for SHT45Reader timeout handling."""
+
+    def test_raises_timeout_error_on_empty_line(self) -> None:
+        """read() raises TimeoutError when readline() returns empty bytes (timeout)."""
+        serial = _make_serial("")
+        reader = SHT45Reader(port="/dev/ttyACM0", sensor_id="s1", serial_port=serial)
+        with pytest.raises(TimeoutError, match="No data received"):
+            reader.read()
+
+
 class TestSHT45ReaderClose:
     """Tests for SHT45Reader.close."""
 
@@ -147,6 +158,8 @@ class TestSHT45ReaderInit:
         try:
             reader = SHT45Reader(port="/dev/ttyACM0", sensor_id="s1")
             assert reader._serial is mock_instance
-            mock_serial_cls.assert_called_once_with("/dev/ttyACM0", BAUD_RATE)
+            mock_serial_cls.assert_called_once_with(
+                "/dev/ttyACM0", BAUD_RATE, timeout=READ_TIMEOUT
+            )
         finally:
             serial.Serial = original  # type: ignore[assignment]

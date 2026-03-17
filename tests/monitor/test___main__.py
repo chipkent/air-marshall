@@ -71,6 +71,22 @@ class TestLogging:
 
         mock_basicconfig.assert_called_once_with(level="DEBUG")
 
+    def test_invalid_log_level_exits(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """main() exits non-zero when AIR_MARSHALL_MONITOR_LOG_LEVEL is unrecognised."""
+        monkeypatch.setenv("AIR_MARSHALL_BASE_URL", "http://pi:8000")
+        monkeypatch.setenv("AIR_MARSHALL_API_KEY", "secret")
+        monkeypatch.setenv("AIR_MARSHALL_MONITOR_LOG_LEVEL", "VERBOSE")
+        monkeypatch.setattr(
+            sys, "argv", ["cmd", "--publish", "humidity", "--humidity-name", "s1"]
+        )
+
+        from air_marshall.monitor.__main__ import main
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        assert exc_info.value.code != 0
+
 
 class TestMissingEnvVars:
     """Tests for main() with missing environment variables."""

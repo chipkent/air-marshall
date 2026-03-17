@@ -9,6 +9,9 @@ from air_marshall.api.models import HumidityRecord
 BAUD_RATE: int = 9600
 """Serial baud rate for the SHT45 Trinkey."""
 
+READ_TIMEOUT: float = 5.0
+"""Seconds to wait for a line from the Trinkey before raising TimeoutError."""
+
 
 class SHT45Reader:
     """Reads humidity and temperature from an SHT45 Trinkey over USB serial.
@@ -31,7 +34,9 @@ class SHT45Reader:
     ) -> None:
         self._sensor_id = sensor_id
         if serial_port is None:
-            self._serial: serial.Serial = serial.Serial(port, BAUD_RATE)
+            self._serial: serial.Serial = serial.Serial(
+                port, BAUD_RATE, timeout=READ_TIMEOUT
+            )
         else:
             self._serial = serial_port
 
@@ -43,9 +48,12 @@ class SHT45Reader:
             ``sensor_serial_number`` taken from the sensor's CSV output.
 
         Raises:
+            TimeoutError: If no data is received within ``READ_TIMEOUT`` seconds.
             ValueError: If the CSV line cannot be parsed or has fewer than 4 fields.
         """
         line = self._serial.readline().decode().strip()
+        if not line:
+            raise TimeoutError("No data received from SHT45 Trinkey within timeout")
         parts = line.split(",")
         try:
             temperature = float(parts[0])
