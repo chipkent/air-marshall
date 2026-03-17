@@ -16,28 +16,24 @@ name = "air-marshall"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "aiosqlite" },
+    { name = "fastapi" },
     { name = "httpx" },
     { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "pyserial" },
+    { name = "uvicorn", extra = ["standard"] },
+    { name = "zipcodes" },
 ]
 
 [package.optional-dependencies]
-database = [
-    { name = "aiosqlite" },
-    { name = "fastapi" },
-    { name = "pydantic-settings" },
-    { name = "uvicorn", extra = ["standard"] },
-]
 dev = [
-    { name = "aiosqlite" },
-    { name = "fastapi" },
     { name = "mypy" },
-    { name = "pydantic-settings" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "pytest-timeout" },
     { name = "ruff" },
-    { name = "uvicorn", extra = ["standard"] },
 ]
 lint = [
     { name = "mypy" },
@@ -52,21 +48,23 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiosqlite", marker = "extra == 'database'", specifier = ">=0.20" },
-    { name = "air-marshall", extras = ["hvac", "monitor", "database", "test", "lint"], marker = "extra == 'dev'" },
-    { name = "fastapi", marker = "extra == 'database'", specifier = ">=0.111" },
+    { name = "aiosqlite", specifier = ">=0.20" },
+    { name = "air-marshall", extras = ["test", "lint"], marker = "extra == 'dev'" },
+    { name = "fastapi", specifier = ">=0.111" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "mypy", marker = "extra == 'lint'", specifier = ">=1.6" },
     { name = "pydantic", specifier = ">=2.0" },
-    { name = "pydantic-settings", marker = "extra == 'database'", specifier = ">=2.2" },
+    { name = "pydantic-settings", specifier = ">=2.2" },
+    { name = "pyserial", specifier = ">=3.5" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=0.23" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=4.1" },
     { name = "pytest-timeout", marker = "extra == 'test'", specifier = ">=2.1" },
     { name = "ruff", marker = "extra == 'lint'", specifier = ">=0.1" },
-    { name = "uvicorn", extras = ["standard"], marker = "extra == 'database'", specifier = ">=0.29" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.29" },
+    { name = "zipcodes", specifier = ">=1.0" },
 ]
-provides-extras = ["hvac", "monitor", "database", "test", "lint", "dev"]
+provides-extras = ["test", "lint", "dev"]
 
 [[package]]
 name = "annotated-doc"
@@ -624,6 +622,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pyserial"
+version = "3.5"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1e/7d/ae3f0a63f41e4d2f6cb66a5b57197850f919f59e558159a4dd3a818f5082/pyserial-3.5.tar.gz", hash = "sha256:3c77e014170dfffbd816e6ffc205e9842efb10be9f58ec16d3e8675b4925cddb", size = 159125, upload-time = "2020-11-23T03:59:15.045Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/bc/587a445451b253b285629263eb51c2d8e9bcea4fc97826266d186f96f558/pyserial-3.5-py2.py3-none-any.whl", hash = "sha256:c4451db6ba391ca6ca299fb3ec7bae67a5c55dde170964c7a14ceefec02f2cf0", size = 90585, upload-time = "2020-11-23T03:59:13.41Z" },
+]
+
+[[package]]
 name = "pytest"
 version = "9.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1061,4 +1068,13 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a5/8f/aea9c71cc92bf9b6cc0f7f70df8f0b420636b6c96ef4feee1e16f80f75dd/websockets-16.0-pp311-pypy311_pp73-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:0298d07ee155e2e9fda5be8a9042200dd2e3bb0b8a38482156576f863a9d457c", size = 176968, upload-time = "2026-01-10T09:23:41.031Z" },
     { url = "https://files.pythonhosted.org/packages/9a/3f/f70e03f40ffc9a30d817eef7da1be72ee4956ba8d7255c399a01b135902a/websockets-16.0-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:a653aea902e0324b52f1613332ddf50b00c06fdaf7e92624fbf8c77c78fa5767", size = 178735, upload-time = "2026-01-10T09:23:42.259Z" },
     { url = "https://files.pythonhosted.org/packages/6f/28/258ebab549c2bf3e64d2b0217b973467394a9cea8c42f70418ca2c5d0d2e/websockets-16.0-py3-none-any.whl", hash = "sha256:1637db62fad1dc833276dded54215f2c7fa46912301a24bd94d45d46a011ceec", size = 171598, upload-time = "2026-01-10T09:23:45.395Z" },
+]
+
+[[package]]
+name = "zipcodes"
+version = "1.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d4/52/925e88bce7af455d2a444c5df379427f6f3e3979345dac89542e1cce283e/zipcodes-1.3.0.tar.gz", hash = "sha256:6a8d663f8477b54806b0af01bd90bfa2ba88e8e79be824a44e37697c69d064ef", size = 729212, upload-time = "2025-02-16T06:17:40.384Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e0/f5/c5cfbe4a833ad967c130a8946eb093ec2f163d41d0c90b5df99aa8f61748/zipcodes-1.3.0-py2.py3-none-any.whl", hash = "sha256:0da407f1c7e7c0bb93fc91da00c4bb95dc88b545c2ff04febdff5168e9ab8b2f", size = 726729, upload-time = "2025-02-16T06:17:37.984Z" },
 ]

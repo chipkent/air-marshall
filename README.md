@@ -47,6 +47,7 @@ pre-commit install --hook-type commit-msg --hook-type pre-commit
 ```sh
 ./bin/test.sh              # all unit tests (Python + Flutter)
 ./bin/test-integration.sh  # all integration tests — starts a live DB server
+./bin/test-hardware.sh     # hardware tests — run on-device only (monitor RPi)
 ```
 
 To run a subset:
@@ -54,6 +55,7 @@ To run a subset:
 ```sh
 uv run pytest                                                      # Python unit tests only
 uv run pytest -m integration -v --no-cov --log-cli-level=INFO     # Python integration tests only
+uv run pytest -m hardware -v --no-cov --log-cli-level=INFO        # Python hardware tests only (on-device)
 cd app && flutter test --exclude-tags integration                  # Flutter unit tests only
 cd app && flutter test --tags integration                          # Flutter integration tests only
 ```
@@ -65,4 +67,4 @@ cd app && flutter test --tags integration                          # Flutter int
 | Database service | [docs/database.md](docs/database.md) |
 | Flutter app | *(docs coming)* |
 | Controller RPi | *(docs coming)* |
-| Monitor RPi | *(docs coming)* |
+| Monitor RPi | [docs/publisher.md](docs/publisher.md) |
